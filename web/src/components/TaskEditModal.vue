@@ -37,7 +37,7 @@
                     <select v-model.number="selectedScenario" class="form-control" id="selectScenario">
                       <option :value="1">URA</option>
                       <option :value="2">Aoharu Cup</option>
-                      <option :value="3">MANT</option>
+<option :value="3">MANT (in progress)</option>
                     </select>
                   </div>
                 </div>
@@ -82,6 +82,14 @@
                 <div class="col-4">
                   <div class="form-group">
                     <span class="btn auto-btn" style="width:100%" v-on:click="openAoharuConfigModal">Aoharu Cup Configuration</span>
+                  </div>
+                </div>
+              </div>
+              <div class="row" v-if="selectedScenario === 3">
+                <div class="col-12">
+                  <div class="form-group">
+                    <label>Items selection</label>
+                    <div class="section-card p-3">test</div>
                   </div>
                 </div>
               </div>
@@ -492,6 +500,68 @@
                     </div>
                   </div>
                 </div>
+              </div>
+
+              <div class="hint-boost-section mt-3 mb-3" v-for="(fsg, fsgIdx) in friendshipScoreGroups" :key="'fsg-'+fsgIdx">
+                <div class="hint-boost-header" @click="fsg.expanded = !fsg.expanded">
+                  <div class="hint-boost-title">
+                    <i class="fas fa-heart"></i>
+                    Friendship score{{ fsgIdx > 0 ? ' ' + (fsgIdx + 1) : '' }}
+                  </div>
+                  <div class="hint-boost-toggle">
+                    <span v-if="fsg.characters.length" class="hint-boost-badge">{{ fsg.characters.length }} selected · {{ fsg.multiplier }}%</span>
+                    <span class="toggle-text">{{ fsg.expanded ? 'Hide' : 'Show' }}</span>
+                    <i class="fas" :class="fsg.expanded ? 'fa-chevron-up' : 'fa-chevron-down'"></i>
+                  </div>
+                </div>
+                <div v-if="fsg.expanded" class="hint-boost-content">
+                  <p style="font-size: 0.85em; color: var(--muted); margin-bottom: 10px;">
+                    Multiplies the blue and green friendship scores of selected characters by this %
+                  </p>
+                  <div class="row align-items-center mb-3">
+                    <div class="col-md-4 col-6">
+                      <label class="mb-1">Friendship Multiplier</label>
+                      <div class="hint-slider-group">
+                        <input type="range" class="hint-slider" v-model.number="fsg.multiplier" min="0" max="200" step="5">
+                        <div class="input-group input-group-sm" style="width:110px;">
+                          <input type="number" class="form-control" v-model.number="fsg.multiplier" min="0" max="200" step="5">
+                          <span class="input-group-text">%</span>
+                        </div>
+                      </div>
+                    </div>
+                    <div class="col-md-4 col-6">
+                      <label class="mb-1">Search</label>
+                      <input type="text" class="form-control form-control-sm" v-model="fsg.search" placeholder="Search characters...">
+                    </div>
+                    <div class="col-md-4 col-6 d-flex align-items-end" style="padding-top: 4px;">
+                      <button type="button" class="btn btn-sm btn-outline-secondary" @click="fsg.characters = []">Clear All</button>
+
+                    </div>
+                  </div>
+                  <div v-if="fsg.characters.length" class="hint-boost-selected mb-2">
+                    <div v-for="name in fsg.characters" :key="'fsg-sel-'+fsgIdx+'-'+name" class="hint-chip selected" @click="toggleFsgCharacter(fsgIdx, name)">
+                      <img :src="'/training-icon/' + encodeURIComponent(name)" class="hint-chip-icon" loading="lazy" @error="$event.target.style.display='none'">
+                      <span>{{ name }}</span>
+                      <i class="fas fa-times hint-chip-remove"></i>
+                    </div>
+                  </div>
+                  <div class="hint-char-grid">
+                    <div v-for="name in filteredFsgCharacters(fsgIdx)" :key="'fsg-'+fsgIdx+'-'+name"
+                      class="hint-char-item" :class="{ selected: fsg.characters.includes(name) }"
+                      @click="toggleFsgCharacter(fsgIdx, name)">
+                      <img :src="'/training-icon/' + encodeURIComponent(name)" class="hint-char-icon" loading="lazy" @error="$event.target.style.display='none'">
+                      <span class="hint-char-name">{{ name }}</span>
+                    </div>
+                  </div>
+                </div>
+              </div>
+              <div class="mb-3">
+                <button type="button" class="btn btn-sm btn-outline-secondary" @click="friendshipScoreGroups.push({ characters: [], multiplier: 100, search: '', expanded: false })">
+                  <i class="fas fa-plus"></i> Add new folder
+                </button>
+                <button v-if="friendshipScoreGroups.length > 1" type="button" class="btn btn-sm btn-outline-danger ms-2" @click="friendshipScoreGroups.pop()">
+                  <i class="fas fa-trash"></i> Delete folder
+                </button>
               </div>
 
               <div>
@@ -2135,6 +2205,10 @@ export default {
       hintBoostMultiplier: 100,
       hintBoostSearch: '',
       showHintBoostPanel: false,
+      friendshipScoreGroups: [
+        { characters: [], multiplier: 100, search: '', expanded: false },
+        { characters: [], multiplier: 100, search: '', expanded: false }
+      ],
       allTrainingCharacters: [],
       npcScoreJunior: [0.05, 0.05, 0.05],
       npcScoreClassic: [0.05, 0.05, 0.05],
@@ -2928,6 +3002,21 @@ export default {
         this.hintBoostCharacters.push(name);
       }
     },
+    toggleFsgCharacter(groupIdx, name) {
+      const group = this.friendshipScoreGroups[groupIdx];
+      const idx = group.characters.indexOf(name);
+      if (idx >= 0) {
+        group.characters.splice(idx, 1);
+      } else {
+        group.characters.push(name);
+      }
+    },
+    filteredFsgCharacters(groupIdx) {
+      const group = this.friendshipScoreGroups[groupIdx];
+      if (!group.search) return this.allTrainingCharacters;
+      const q = group.search.toLowerCase();
+      return this.allTrainingCharacters.filter(n => n.toLowerCase().includes(q));
+    },
     deleteBox(item, index) {
       if (this.skillLearnPriorityList.length <= 1) {
         return false
@@ -3237,6 +3326,7 @@ export default {
           "skip_double_circle_unless_high_hint": this.skipDoubleCircleUnlessHighHint,
           "hint_boost_characters": [...this.hintBoostCharacters],
           "hint_boost_multiplier": this.hintBoostMultiplier,
+          "friendship_score_groups": this.friendshipScoreGroups.map(g => ({ characters: [...g.characters], multiplier: g.multiplier })),
           "override_insufficient_fans_forced_races": this.overrideInsufficientFansForcedRaces,
           "learn_skill_threshold": this.learnSkillThreshold,
           "allow_recover_tp": this.recoverTP,
@@ -3380,6 +3470,11 @@ export default {
       this.skipDoubleCircleUnlessHighHint = !!this.presetsUse.skip_double_circle_unless_high_hint
       this.hintBoostCharacters = Array.isArray(this.presetsUse.hint_boost_characters) ? [...this.presetsUse.hint_boost_characters] : []
       this.hintBoostMultiplier = this.presetsUse.hint_boost_multiplier !== undefined ? this.presetsUse.hint_boost_multiplier : 100
+      if (Array.isArray(this.presetsUse.friendship_score_groups) && this.presetsUse.friendship_score_groups.length > 0) {
+        this.friendshipScoreGroups = this.presetsUse.friendship_score_groups.map(g => ({ characters: [...(g.characters || [])], multiplier: g.multiplier !== undefined ? g.multiplier : 100, search: '', expanded: false }))
+      } else {
+        this.friendshipScoreGroups = [{ characters: [], multiplier: 100, search: '', expanded: false }, { characters: [], multiplier: 100, search: '', expanded: false }]
+      }
         this.learnSkillThreshold = this.presetsUse.learn_skill_threshold
         // Convert legacy race tactics to new condition system if actions not present
         if (this.presetsUse.tactic_actions && this.presetsUse.tactic_actions.length > 0) {
@@ -3727,6 +3822,11 @@ export default {
       this.skipDoubleCircleUnlessHighHint = data.skip_double_circle_unless_high_hint || false;
       this.hintBoostCharacters = Array.isArray(data.hint_boost_characters) ? [...data.hint_boost_characters] : [];
       this.hintBoostMultiplier = data.hint_boost_multiplier !== undefined ? data.hint_boost_multiplier : 100;
+      if (Array.isArray(data.friendship_score_groups) && data.friendship_score_groups.length > 0) {
+        this.friendshipScoreGroups = data.friendship_score_groups.map(g => ({ characters: [...(g.characters || [])], multiplier: g.multiplier !== undefined ? g.multiplier : 100, search: '', expanded: false }));
+      } else {
+        this.friendshipScoreGroups = [{ characters: [], multiplier: 100, search: '', expanded: false }, { characters: [], multiplier: 100, search: '', expanded: false }];
+      }
       this.learnSkillOnlyUserProvided = data.learn_skill_only_user_provided || false;
       if (data.tactic_list && data.tactic_list.length >= 3) {
         this.selectedRaceTactic1 = data.tactic_list[0];
@@ -3929,6 +4029,7 @@ export default {
         skip_double_circle_unless_high_hint: this.skipDoubleCircleUnlessHighHint,
         hint_boost_characters: [...this.hintBoostCharacters],
         hint_boost_multiplier: this.hintBoostMultiplier,
+        friendship_score_groups: this.friendshipScoreGroups.map(g => ({ characters: [...g.characters], multiplier: g.multiplier })),
         race_tactic_1: this.selectedRaceTactic1,
         race_tactic_2: this.selectedRaceTactic2,
         race_tactic_3: this.selectedRaceTactic3,
@@ -4103,6 +4204,7 @@ export default {
         skip_double_circle_unless_high_hint: this.skipDoubleCircleUnlessHighHint,
         hint_boost_characters: [...this.hintBoostCharacters],
         hint_boost_multiplier: this.hintBoostMultiplier,
+        friendship_score_groups: this.friendshipScoreGroups.map(g => ({ characters: [...g.characters], multiplier: g.multiplier })),
         race_tactic_1: this.selectedRaceTactic1,
         race_tactic_2: this.selectedRaceTactic2,
         race_tactic_3: this.selectedRaceTactic3,

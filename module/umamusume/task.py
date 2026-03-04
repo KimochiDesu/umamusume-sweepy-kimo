@@ -45,6 +45,7 @@ class TaskDetail:
     skip_double_circle_unless_high_hint: bool
     hint_boost_characters: list[str]
     hint_boost_multiplier: int
+    friendship_score_groups: list
 
 
 class EndTaskReason(Enum):
@@ -152,6 +153,7 @@ def build_task(task_execute_mode: TaskExecuteMode, task_type: int,
     td.skip_double_circle_unless_high_hint = attachment_data.get('skip_double_circle_unless_high_hint', False)
     td.hint_boost_characters = attachment_data.get('hint_boost_characters', [])
     td.hint_boost_multiplier = int(attachment_data.get('hint_boost_multiplier', 100))
+    td.friendship_score_groups = attachment_data.get('friendship_score_groups', [])
     
     ut.detail = td
     return ut

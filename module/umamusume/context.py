@@ -98,6 +98,7 @@ class CultivateContextDetail:
     skip_double_circle_unless_high_hint: bool
     hint_boost_characters: list[str]
     hint_boost_multiplier: int
+    friendship_score_groups: list
     score_history: list[float]
     deviation_history: list[float]
 
@@ -224,6 +225,7 @@ def build_context(task: UmamusumeTask, ctrl) -> UmamusumeContext:
         detail.skip_double_circle_unless_high_hint = getattr(task.detail, 'skip_double_circle_unless_high_hint', False)
         detail.hint_boost_characters = list(getattr(task.detail, 'hint_boost_characters', []))
         detail.hint_boost_multiplier = int(getattr(task.detail, 'hint_boost_multiplier', 100))
+        detail.friendship_score_groups = list(getattr(task.detail, 'friendship_score_groups', []))
         detail.score_history = []
         detail.deviation_history = []
         try:

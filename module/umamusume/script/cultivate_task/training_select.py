@@ -406,6 +406,13 @@ def script_cultivate_training_select(ctx: UmamusumeContext):
         if base_energy is not None:
             log.info(f"Base Energy: {base_energy:.1f}%{' (high energy)' if base_energy >= 80 else ''}")
 
+        fsg_lookup = {}
+        for g in getattr(ctx.cultivate_detail, 'friendship_score_groups', []):
+            if isinstance(g, dict) and g.get('characters'):
+                mult = g.get('multiplier', 100) / 100.0
+                for cname in g['characters']:
+                    fsg_lookup[cname] = mult
+
         for idx in range(5):
             til = ctx.cultivate_detail.turn_info.training_info_list[idx]
             target_type = type_map[idx]
@@ -415,7 +422,13 @@ def script_cultivate_training_select(ctx: UmamusumeContext):
             npc_total_contrib = 0.0
             pal_count = 0
             score = base_scores[idx] if isinstance(base_scores, (list, tuple)) and len(base_scores) > idx else 0.0
-            for sc in (getattr(til, "support_card_info_list", []) or []):
+            detected_chars = getattr(til, 'detected_characters', [])
+            slot_name_map = {}
+            for slot_idx, cname, cscore in detected_chars:
+                if cname is not None:
+                    slot_name_map[slot_idx] = cname
+            sc_list = getattr(til, "support_card_info_list", []) or []
+            for sc_idx, sc in enumerate(sc_list):
                 favor = getattr(sc, "favor", SupportCardFavorLevel.SUPPORT_CARD_FAVOR_LEVEL_UNKNOWN)
                 ctype = getattr(sc, "card_type", SupportCardType.SUPPORT_CARD_TYPE_UNKNOWN)
                 if ctype == SupportCardType.SUPPORT_CARD_TYPE_NPC:
@@ -451,12 +464,14 @@ def script_cultivate_training_select(ctx: UmamusumeContext):
                     continue
                 if favor in (SupportCardFavorLevel.SUPPORT_CARD_FAVOR_LEVEL_3, SupportCardFavorLevel.SUPPORT_CARD_FAVOR_LEVEL_4) and ctype == target_type:
                     continue
+                char_name = slot_name_map.get(sc_idx)
+                fsg_mult = fsg_lookup.get(char_name, 1.0) if char_name else 1.0
                 if favor == SupportCardFavorLevel.SUPPORT_CARD_FAVOR_LEVEL_1:
                     lv1c += 1
-                    score += w_lv1
+                    score += w_lv1 * fsg_mult
                 elif favor == SupportCardFavorLevel.SUPPORT_CARD_FAVOR_LEVEL_2:
                     lv2c += 1
-                    score += w_lv2
+                    score += w_lv2 * fsg_mult
             
             stat_results = getattr(til, 'stat_results', {})
             stat_score = 0.0

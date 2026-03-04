@@ -22,7 +22,7 @@ export default {
       } else if (this.task.detail?.scenario === 2) {
         return 'Aoharu Cup';
       } else if (this.task.detail?.scenario === 3) {
-        return 'MANT';
+        return 'MANT (in progress)';
       }
       return 'Unknown Scenario';
     }
