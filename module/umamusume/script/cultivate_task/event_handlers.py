@@ -94,6 +94,13 @@ def detect_hint_after_event(ctrl, event_name):
 
 
 def script_cultivate_event(ctx: UmamusumeContext):
+    try:
+        cd = getattr(ctx.cultivate_detail, 'event_cooldown_until', 0)
+        if isinstance(cd, (int, float)) and time.time() < cd:
+            return
+    except Exception:
+        pass
+
     t0 = time.perf_counter()
     log.info("Event handler called")
     
