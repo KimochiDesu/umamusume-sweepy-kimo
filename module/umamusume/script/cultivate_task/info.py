@@ -12,11 +12,20 @@ from module.umamusume.asset.ui import INFO
 from module.umamusume.context import UmamusumeContext
 import bot.base.log as logger
 from bot.engine.ctrl import reset_task
+from module.umamusume.define import ScenarioType
 
 log = logger.get_logger(__name__)
 
+
+def get_race_point(ctx):
+    try:
+        if ctx.cultivate_detail.scenario.scenario_type() == ScenarioType.SCENARIO_TYPE_MANT:
+            return CULTIVATE_RACE_MANT
+    except Exception:
+        pass
+    return CULTIVATE_RACE
+
 def get_date_name(date_id: int) -> str:
-    """Convert numeric date ID to readable date name"""
     if date_id <= 0:
         return "Unknown Date"
     
@@ -89,7 +98,8 @@ TITLE = [
     "Auto Select", #45
     "Session Error", #46
     "Choose Career Mode", #47
-    "Borrow Card" #48
+    "Borrow Card", #48
+    "Insufficient Goal Race Result Pts" #49
 ]
 
 
@@ -311,7 +321,7 @@ def script_info(ctx: UmamusumeContext):
             ctx.cultivate_detail.turn_info.turn_operation.turn_operation_type = TurnOperationType.TURN_OPERATION_TYPE_RACE
             ctx.cultivate_detail.turn_info.turn_operation.race_id = target_race_id
             log.info("racing for unmet requirements")
-            ctx.ctrl.click_by_point(CULTIVATE_RACE)
+            ctx.ctrl.click_by_point(get_race_point(ctx))
 
 
             if not matching_races:
@@ -443,7 +453,7 @@ def script_info(ctx: UmamusumeContext):
             ctx.cultivate_detail.turn_info.turn_operation.turn_operation_type = TurnOperationType.TURN_OPERATION_TYPE_RACE
             ctx.cultivate_detail.turn_info.turn_operation.race_id = target_race_id
             log.info("🏁 Set race operation for G1 goal farming")
-            ctx.ctrl.click_by_point(CULTIVATE_RACE)  # Navigate to race menu
+            ctx.ctrl.click_by_point(get_race_point(ctx))  # Navigate to race menu
             log.info("📋 Navigated to race selection to work towards G1 goals")
             
             # If no user-selected races found, search for suitable race template
@@ -534,7 +544,7 @@ def script_info(ctx: UmamusumeContext):
             ctx.cultivate_detail.turn_info.turn_operation.turn_operation_type = TurnOperationType.TURN_OPERATION_TYPE_RACE
             ctx.cultivate_detail.turn_info.turn_operation.race_id = target_race_id
             log.info("🏁 Set race operation for fan farming")
-            ctx.ctrl.click_by_point(CULTIVATE_RACE)
+            ctx.ctrl.click_by_point(get_race_point(ctx))
             log.info("📋 Navigated to race selection to work towards fan goals")
             
             # If no user-selected races found, search for suitable race template
@@ -641,4 +651,7 @@ def script_info(ctx: UmamusumeContext):
             from module.umamusume.script.cultivate_task.skill_learning import script_follow_support_card_select
             script_follow_support_card_select(ctx)
             return
+        if title_text == TITLE[49]:
+            log.info("Insufficient Goal Race Result Pts - pressing Cancel")
+            ctx.ctrl.click_by_point(INSUFFICIENT_RESULT_PTS_CANCEL)
         time.sleep(1)

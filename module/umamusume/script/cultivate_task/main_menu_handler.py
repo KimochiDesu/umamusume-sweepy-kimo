@@ -9,8 +9,11 @@ from module.umamusume.define import TurnOperationType
 from module.umamusume.asset.point import (
     CULTIVATE_TRIP, CULTIVATE_REST, CULTIVATE_SKILL_LEARN,
     TO_TRAINING_SELECT, CULTIVATE_RACE, CULTIVATE_RACE_SUMMER,
-    CULTIVATE_MEDIC, CULTIVATE_MEDIC_SUMMER
+    CULTIVATE_MEDIC, CULTIVATE_MEDIC_SUMMER,
+    CULTIVATE_MEDIC_MANT, CULTIVATE_TRIP_MANT, CULTIVATE_RACE_MANT
 )
+from module.umamusume.asset.template import REF_MANT_ON_SALE
+from module.umamusume.define import ScenarioType
 from module.umamusume.constants.game_constants import (
     is_summer_camp_period, is_ura_race, NEW_RUN_DETECTION_DATE,
     URA_QUALIFIER_ID, URA_SEMIFINAL_ID, URA_FINAL_IDS, PRE_DEBUT_END
@@ -23,6 +26,29 @@ from module.umamusume.script.cultivate_task.helpers import should_use_pal_outing
 from bot.recog.energy_scanner import scan_energy
 
 log = logger.get_logger(__name__)
+
+
+def is_mant(ctx):
+    try:
+        return ctx.cultivate_detail.scenario.scenario_type() == ScenarioType.SCENARIO_TYPE_MANT
+    except Exception:
+        return False
+
+
+def get_trip(ctx):
+    return CULTIVATE_TRIP_MANT if is_mant(ctx) else CULTIVATE_TRIP
+
+
+def get_race(ctx, summer=False):
+    if is_mant(ctx):
+        return CULTIVATE_RACE_MANT
+    return CULTIVATE_RACE_SUMMER if summer else CULTIVATE_RACE
+
+
+def get_medic(ctx, summer=False):
+    if is_mant(ctx):
+        return CULTIVATE_MEDIC_MANT
+    return CULTIVATE_MEDIC_SUMMER if summer else CULTIVATE_MEDIC
 
 
 def script_cultivate_main_menu(ctx: UmamusumeContext):
@@ -47,6 +73,12 @@ def script_cultivate_main_menu(ctx: UmamusumeContext):
             ctx.cultivate_detail.manual_purchase_completed = False
             if hasattr(ctx.cultivate_detail, 'manual_purchase_initiated'):
                 delattr(ctx.cultivate_detail, 'manual_purchase_initiated')
+
+    if is_mant(ctx):
+        img_gray = cv2.cvtColor(img, cv2.COLOR_BGR2GRAY)
+        sale_result = image_match(img_gray, REF_MANT_ON_SALE)
+        if sale_result.find_match:
+            log.info("shop on sale")
 
     if not ctx.cultivate_detail.turn_info.parse_main_menu_finish:
         parse_cultivate_main_menu(ctx, img)
@@ -96,7 +128,7 @@ def script_cultivate_main_menu(ctx: UmamusumeContext):
             
             if need_detection:
                 log.info("Opening recreation menu to detect stage")
-                ctx.ctrl.click_by_point(CULTIVATE_TRIP)
+                ctx.ctrl.click_by_point(get_trip(ctx))
                 time.sleep(0.15)
                 img = ctx.ctrl.get_screen()
                 
@@ -153,7 +185,7 @@ def script_cultivate_main_menu(ctx: UmamusumeContext):
 
     if turn_operation is not None and turn_operation.turn_operation_type == TurnOperationType.TURN_OPERATION_TYPE_REST:
         if should_use_pal_outing_simple(ctx):
-            ctx.ctrl.click_by_point(CULTIVATE_TRIP)
+            ctx.ctrl.click_by_point(get_trip(ctx))
         else:
             ctx.ctrl.click_by_point(CULTIVATE_REST)
         return
@@ -163,7 +195,7 @@ def script_cultivate_main_menu(ctx: UmamusumeContext):
         if is_summer_camp_period(ctx.cultivate_detail.turn_info.date):
             ctx.ctrl.click(68, 991, "Summer Camp")
         else:
-            ctx.ctrl.click_by_point(CULTIVATE_TRIP)
+            ctx.ctrl.click_by_point(get_trip(ctx))
         return
 
     if not ctx.cultivate_detail.turn_info.parse_train_info_finish:
@@ -181,7 +213,7 @@ def script_cultivate_main_menu(ctx: UmamusumeContext):
                 energy = read_energy()
         if energy <= limit:
             if should_use_pal_outing_simple(ctx):
-                ctx.ctrl.click_by_point(CULTIVATE_TRIP)
+                ctx.ctrl.click_by_point(get_trip(ctx))
             else:
                 ctx.ctrl.click_by_point(CULTIVATE_REST)
             return
@@ -199,19 +231,21 @@ def script_cultivate_main_menu(ctx: UmamusumeContext):
             ctx.ctrl.click_by_point(TO_TRAINING_SELECT)
         elif turn_operation.turn_operation_type == TurnOperationType.TURN_OPERATION_TYPE_REST:
             if should_use_pal_outing_simple(ctx):
-                ctx.ctrl.click_by_point(CULTIVATE_TRIP)
+                ctx.ctrl.click_by_point(get_trip(ctx))
             else:
                 ctx.ctrl.click_by_point(CULTIVATE_REST)
         elif turn_operation.turn_operation_type == TurnOperationType.TURN_OPERATION_TYPE_MEDIC:
-            if is_summer_camp_period(ctx.cultivate_detail.turn_info.date):
-                ctx.ctrl.click_by_point(CULTIVATE_MEDIC_SUMMER)
-            else:
-                ctx.ctrl.click_by_point(CULTIVATE_MEDIC)
+            is_summer = is_summer_camp_period(ctx.cultivate_detail.turn_info.date)
+            ctx.ctrl.click_by_point(get_medic(ctx, summer=is_summer))
             time.sleep(MEDIC_CHECK_DELAY)
             img = ctx.ctrl.get_screen()
             img_rgb = cv2.cvtColor(img, cv2.COLOR_BGR2RGB)
-            is_summer = is_summer_camp_period(ctx.cultivate_detail.turn_info.date)
-            check_point = img_rgb[1130, 200] if is_summer else img_rgb[1125, 105]
+            if is_mant(ctx):
+                check_point = img_rgb[1125, 40]
+            elif is_summer:
+                check_point = img_rgb[1130, 200]
+            else:
+                check_point = img_rgb[1125, 105]
             if not (check_point[0] > 200 and check_point[1] > 200 and check_point[2] > 200):
                 log.info("not sick resetting decision")
                 ctx.ctrl.trigger_decision_reset = True
@@ -219,7 +253,7 @@ def script_cultivate_main_menu(ctx: UmamusumeContext):
             if is_summer_camp_period(ctx.cultivate_detail.turn_info.date):
                 ctx.ctrl.click(68, 991, "Summer Camp")
             else:
-                ctx.ctrl.click_by_point(CULTIVATE_TRIP)
+                ctx.ctrl.click_by_point(get_trip(ctx))
         elif turn_operation.turn_operation_type == TurnOperationType.TURN_OPERATION_TYPE_RACE:
             race_id = turn_operation.race_id
             
@@ -258,10 +292,8 @@ def script_cultivate_main_menu(ctx: UmamusumeContext):
                 
                 if ura_race_available:
                     log.info(f"URA {ura_phase} UI detected - proceeding to race")
-                    if is_summer_camp_period(ctx.cultivate_detail.turn_info.date):
-                        ctx.ctrl.click_by_point(CULTIVATE_RACE_SUMMER)
-                    else:
-                        ctx.ctrl.click_by_point(CULTIVATE_RACE)
+                    is_summer = is_summer_camp_period(ctx.cultivate_detail.turn_info.date)
+                    ctx.ctrl.click_by_point(get_race(ctx, summer=is_summer))
                 else:
                     log.info(f"URA {ura_phase} not yet available - continuing with normal flow")
                     ctx.cultivate_detail.turn_info.turn_operation = None
@@ -291,7 +323,5 @@ def script_cultivate_main_menu(ctx: UmamusumeContext):
                     if hasattr(ti, 'race_search_id'):
                         delattr(ti, 'race_search_id')
                     return
-                if is_summer_camp_period(ctx.cultivate_detail.turn_info.date):
-                    ctx.ctrl.click_by_point(CULTIVATE_RACE_SUMMER)
-                else:
-                    ctx.ctrl.click_by_point(CULTIVATE_RACE)
+                is_summer = is_summer_camp_period(ctx.cultivate_detail.turn_info.date)
+                ctx.ctrl.click_by_point(get_race(ctx, summer=is_summer))

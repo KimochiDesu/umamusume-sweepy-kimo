@@ -15,7 +15,7 @@ from bot.base.task import TaskStatus, EndTaskReason
 from bot.recog.image_matcher import image_match, compare_color_equal
 from bot.recog.ocr import ocr_line, find_similar_text
 from module.umamusume.asset.race_data import RACE_LIST, UMAMUSUME_RACE_TEMPLATE_PATH
-from module.umamusume.context import UmamusumeContext, log_detected_skill
+from module.umamusume.context import UmamusumeContext
 from module.umamusume.types import SupportCardInfo
 from module.umamusume.asset import *
 from module.umamusume.define import *
@@ -76,6 +76,8 @@ def clear_parse_caches():
     _template_match_cache.clear()
 
 
+def normalize_skill_name(skill_name: str) -> str:
+    return skill_name.replace(" ", "").lower()
 
 
 def normalize_text_for_match(text: str) -> str:
@@ -199,84 +201,6 @@ def get_canonical_skill_name(skill_name: str) -> str:
 def ocr_en(sub_img):
     return ocr_line(sub_img, lang="en")
 
-
-def detect_circle_type(skill_name_gray):
-    h, w = skill_name_gray.shape
-    if h < 10 or w < 30:
-        return 0
-
-    _, binary = cv2.threshold(skill_name_gray, 180, 255, cv2.THRESH_BINARY_INV)
-
-    contours, _ = cv2.findContours(binary, cv2.RETR_TREE, cv2.CHAIN_APPROX_SIMPLE)
-    if not contours:
-        return 0
-
-    candidates = []
-    for cnt in contours:
-        x, y, cw, ch = cv2.boundingRect(cnt)
-        if cw < 12 or ch < 12 or cw > 35 or ch > 35:
-            continue
-        aspect = float(cw) / ch if ch > 0 else 0
-        if aspect < 0.65 or aspect > 1.55:
-            continue
-        perimeter = cv2.arcLength(cnt, True)
-        area = cv2.contourArea(cnt)
-        if perimeter < 1:
-            continue
-        circularity = 4 * 3.14159 * area / (perimeter * perimeter)
-        if circularity < 0.75:
-            continue
-        left_gap = 0
-        for lx in range(x - 1, max(0, x - 15), -1):
-            col = skill_name_gray[:, lx]
-            if not numpy.any(col < 180):
-                left_gap += 1
-            else:
-                break
-        if left_gap < 4:
-            continue
-        candidates.append((x, y, cw, ch, circularity, area, cnt))
-
-    if not candidates:
-        return 0
-
-    candidates.sort(key=lambda c: c[0] + c[2], reverse=True)
-    best = candidates[0]
-    bx, by, bw, bh = best[0], best[1], best[2], best[3]
-
-    cx = bx + bw // 2
-    cy = by + bh // 2
-    r = max(2, min(bw, bh) // 6)
-    y1 = max(0, cy - r)
-    y2 = min(h, cy + r + 1)
-    x1 = max(0, cx - r)
-    x2 = min(w, cx + r + 1)
-    center_region = skill_name_gray[y1:y2, x1:x2]
-    center_mean = float(numpy.mean(center_region))
-
-    ring_r = max(3, min(bw, bh) // 4)
-    ring_dark = 0
-    ring_total = 0
-    for dy in range(-ring_r, ring_r + 1):
-        for dx in range(-ring_r, ring_r + 1):
-            dist = (dx * dx + dy * dy) ** 0.5
-            if dist < r or dist > ring_r:
-                continue
-            py = cy + dy
-            px = cx + dx
-            if 0 <= py < h and 0 <= px < w:
-                ring_total += 1
-                if skill_name_gray[py, px] < 180:
-                    ring_dark += 1
-
-    ring_ratio = ring_dark / ring_total if ring_total > 0 else 0
-
-    if ring_ratio > 0.3:
-        return 2  # double circle
-    elif center_mean > 200:
-        return 1  # single circle
-    else:
-        return 0  # none
 
 def try_alt_cost_regions(skill_info_img):
     regions = [
@@ -670,6 +594,7 @@ def find_support_card(ctx: UmamusumeContext, img):
             support_card_info = img[pos[0][1] - 125:pos[1][1] + 10, pos[0][0] - 140: pos[1][0] + 380]
             img[match_result.matched_area[0][1]:match_result.matched_area[1][1],
             match_result.matched_area[0][0]:match_result.matched_area[1][0]] = 0
+            img = img.copy()
             support_card_level_img = support_card_info[125:145, 68:111]
             support_card_name_img = support_card_info[63:94, 132:439]
 
@@ -747,43 +672,62 @@ def parse_cultivate_event(ctx: UmamusumeContext, img) -> tuple[str, list[int]]:
             event_selector_list.append(match_result.center_point)
             img_temp[match_result.matched_area[0][1]:match_result.matched_area[1][1],
                      match_result.matched_area[0][0]:match_result.matched_area[1][0]] = 0
+            img_temp = img_temp.copy()
         else:
             break
     
-    if len(event_selector_list) < 2:
+    if len(event_selector_list) == 0:
+        log.warning(f"REF_SELECTOR template failed for event '{event_name}', trying individual dialogue templates")
+        
         from module.umamusume.asset.template import Template, UMAMUSUME_REF_TEMPLATE_PATH
+        dialogue_templates = []
+        
+        try:
+            dialogue_templates = [
+                Template("dialogue1", UMAMUSUME_REF_TEMPLATE_PATH),
+                Template("dialogue2", UMAMUSUME_REF_TEMPLATE_PATH),
+                Template("dialogue3", UMAMUSUME_REF_TEMPLATE_PATH),
+                Template("dialogue4", UMAMUSUME_REF_TEMPLATE_PATH),
+                Template("dialogue5", UMAMUSUME_REF_TEMPLATE_PATH)
+            ]
+        except:
+            log.warning("Could not load dialogue templates")
+        
         x1, y1, x2, y2 = 24, 316, 696, 936
         h, w = img_gray.shape[:2]
-        x1 = max(0, min(w, x1)); x2 = max(x1, min(w, x2))
-        y1 = max(0, min(h, y1)); y2 = max(y1, min(h, y2))
-        search_roi = img_gray[y1:y2, x1:x2]
-        dialogue_tpls = []
-        for d in range(1, 6):
+        x1 = max(0, min(w, x1)); x2 = max(x1, min(w, x2)); y1 = max(0, min(h, y1)); y2 = max(y1, min(h, y2))
+        search_img = img_gray[y1:y2, x1:x2].copy()
+        
+        def append_unique_point(points, pt, y_thresh=28, x_thresh=100):
+            for qx, qy in points:
+                if abs(qy - pt[1]) <= y_thresh and abs(qx - pt[0]) <= x_thresh:
+                    return
+            points.append(pt)
+        
+        for template in dialogue_templates:
             try:
-                t = Template(f"dialogue{d}", UMAMUSUME_REF_TEMPLATE_PATH)
-                arr = t.template_image
-                if arr is not None and arr.size > 0:
-                    dialogue_tpls.append(arr)
+                iterations = 0
+                while iterations < 10:
+                    iterations += 1
+                    match_result = image_match(search_img, template)
+                    if match_result.find_match:
+                        abs_pt = (match_result.center_point[0] + x1, match_result.center_point[1] + y1)
+                        append_unique_point(event_selector_list, abs_pt)
+                        y0, y1m = match_result.matched_area[0][1], match_result.matched_area[1][1]
+                        x0, x1m = match_result.matched_area[0][0], match_result.matched_area[1][0]
+                        search_img[y0:y1m, x0:x1m] = 0
+                    else:
+                        break
             except Exception:
                 continue
-        found_pts = []
-        for arr in dialogue_tpls:
-            th, tw = arr.shape[:2]
-            if search_roi.shape[0] < th or search_roi.shape[1] < tw:
-                continue
-            result = cv2.matchTemplate(search_roi, arr, cv2.TM_CCOEFF_NORMED)
-            loc = numpy.where(result >= 0.86)
-            for pt_y, pt_x in zip(*loc):
-                abs_pt = (int(pt_x + x1 + tw // 2), int(pt_y + y1 + th // 2))
-                is_dup = False
-                for ex, ey in found_pts:
-                    if abs(ey - abs_pt[1]) <= 28 and abs(ex - abs_pt[0]) <= 100:
-                        is_dup = True
-                        break
-                if not is_dup:
-                    found_pts.append(abs_pt)
-        if len(found_pts) > len(event_selector_list):
-            event_selector_list = sorted(found_pts, key=lambda p: p[1])[:5]
+        
+        if len(event_selector_list) > 1:
+            deduped = []
+            for pt in sorted(event_selector_list, key=lambda p: p[1]):
+                if not deduped or (abs(deduped[-1][1] - pt[1]) > 20 or abs(deduped[-1][0] - pt[0]) > 80):
+                    deduped.append(pt)
+            event_selector_list = deduped[:5]
+        
         if len(event_selector_list) == 0:
             return event_name, []
     
@@ -794,168 +738,48 @@ def parse_cultivate_event(ctx: UmamusumeContext, img) -> tuple[str, list[int]]:
     return result
 
 
-def convert_race_name_to_ingame_format(race_id: int) -> str:
-    try:
-        import csv
-        # Read race data from CSV
-        with open('resource/umamusume/data/race.csv', 'r', encoding="utf-8") as file:
-            reader = csv.reader(file)
-            for row in reader:
-                if len(row) >= 9 and int(row[1]) == race_id:
-                    # CSV format: time_period,race_id,period_name,race_name,grade,venue,surface,distance,direction,condition,going
-                    venue = row[5] if len(row) > 5 and row[5] else ""  # Hanshin
-                    surface = row[6] if len(row) > 6 and row[6] else ""  # Turf
-                    distance = row[7] if len(row) > 7 and row[7] else ""  # 2200
-                    direction = row[8] if len(row) > 8 and row[8] else ""  # Right
-                    going = row[10] if len(row) > 10 and row[10] else ""  # Medium
-                    
-                    # Build format using only available data
-                    parts = []
-                    
-                    # Add venue + surface + distance if available
-                    if venue and surface and distance:
-                        # Add "m" after distance numbers (4 digits only)
-                        if distance.isdigit() and len(distance) == 4:
-                            parts.append(f"{venue} {surface} {distance}m")
-                        else:
-                            parts.append(f"{venue} {surface} {distance}")
-                    elif venue and surface:
-                        parts.append(f"{venue} {surface}")
-                    elif venue:
-                        parts.append(venue)
-                    
-                    # Add going in parentheses if available
-                    if going:
-                        if going.lower() == "medium":
-                            parts.append("(Med)")
-                        elif going.lower() == "good":
-                            parts.append("(Good)")
-                        elif going.lower() == "yielding":
-                            parts.append("(Yielding)")
-                        elif going.lower() == "soft":
-                            parts.append("(Soft)")
-                        elif going.lower() == "heavy":
-                            parts.append("(Heavy)")
-                        else:
-                            parts.append(f"({going})")
-                    
-                    # Add direction if available
-                    if direction:
-                        parts.append(direction)
-                    
-                    # Join all available parts
-                    in_game_format = " ".join(parts)
-                    
-                    return in_game_format
-    except Exception as e:
-        log.debug(f"Failed to convert race name for ID {race_id}: {e}")
-    
-    # Fallback to original name if conversion fails
-    return RACE_LIST[race_id][1] if race_id < len(RACE_LIST) else ""
 
 
 def find_race(ctx: UmamusumeContext, img, race_id: int = 0) -> bool:
     img = cv2.cvtColor(img, cv2.COLOR_BGR2GRAY)
     target_race_template = RACE_LIST[race_id][2]
     img_height, img_width = img.shape
-    
-    if target_race_template is not None:
-        log.info(f"Looking for race ID {race_id}: {RACE_LIST[race_id][1]}")
-        log.info(f"Template exists: {target_race_template is not None}")
-    else:
-        log.warning(f"No template found for race ID {race_id}")
+
+    if target_race_template is None:
+        log.warning(f"No template for race ID {race_id}")
         return False
-    
+
+    log.info(f"Looking for race {race_id}: {RACE_LIST[race_id][1]}")
+
     iterations = 0
     while iterations < 100:
         iterations += 1
         match_result = image_match(img, REF_RACE_LIST_DETECT_LABEL)
-        if match_result.find_match:
-            pos = match_result.matched_area
-            pos_center = match_result.center_point
-            if 400 < pos_center[1] < 1110:
-                # Calculate safe bounds for race name extraction
-                y1 = max(0, pos[0][1] - 60)
-                y2 = min(img_height, pos[1][1] + 25)
-                x1 = max(0, pos[0][0] - 250)
-                x2 = min(img_width, pos[1][0] + 400)
-                
-                # Extract race name region with bounds checking
-                race_name_img = img[y1:y2, x1:x2]
-                
-                # Check if extracted region is large enough for template matching
-                if target_race_template is not None and race_name_img.shape[0] > 0 and race_name_img.shape[1] > 0:
-                    template_img = target_race_template.template_image
-                    if (template_img is not None and 
-                        race_name_img.shape[0] >= template_img.shape[0] and 
-                        race_name_img.shape[1] >= template_img.shape[1]):
-                        
-                        # STEP 1: Try template matching first
-                        template_match = image_match(race_name_img, target_race_template)
-                        template_success = template_match.find_match
-                        
-                        if template_success:
-                            log.info(f"Template match successful for race {race_id}")
-                        else:
-                            log.debug(f"Template match failed for race {race_id}")
-                            
-                            # Try with preprocessed template (wiki image optimization)
-                            try:
-                                preprocessed_template = preprocess_wiki_image_for_ingame_matching(template_img.copy())
-                                class _Temp: pass
-                                temp_template = _Temp()
-                                temp_template.template_image = preprocessed_template
-                                temp_template.image_match_config = target_race_template.image_match_config
-                                preprocessed_match = image_match(race_name_img, temp_template)
-                                if preprocessed_match.find_match:
-                                    template_success = True
-                                    log.info(f"✅ Preprocessed template match successful for race {race_id}")
-                                else:
-                                    log.debug(f"❌ Preprocessed template match also failed for race {race_id}")
-                            except Exception as e:
-                                log.debug(f"Preprocessed template matching failed: {e}")
-                        
-                        # STEP 2: Try OCR to get the actual race name from screen
-                        ocr_race_id = None
-                        try:
-                            race_name_text = ocr_line(race_name_img)
-                            log.info(f"🔍 OCR extracted text: '{race_name_text}'")
-                            
-                            # Try to find which race ID this OCR text corresponds to
-                            # Search through all races to find a match
-                            for search_race_id in range(len(RACE_LIST)):
-                                entry = RACE_LIST[search_race_id]
-                                if not entry or len(entry) < 2:
-                                    continue
-                                target_race_name = entry[1]
-                                in_game_race_name = convert_race_name_to_ingame_format(search_race_id)
-                                
-                                # Check if OCR text matches this race
-                                csv_match = target_race_name.lower() in race_name_text.lower() or race_name_text.lower() in target_race_name.lower()
-                                ingame_match = in_game_race_name.lower() in race_name_text.lower() or race_name_text.lower() in in_game_race_name.lower()
-                                
-                                if csv_match or ingame_match:
-                                    ocr_race_id = search_race_id
-                                    log.info(f"OCR identified race ID: {ocr_race_id} ({RACE_LIST[ocr_race_id][1]})")
-                                    break
-                                    
-                        except Exception as e:
-                            log.debug(f"OCR failed: {e}")
-                        # (ocr_race_id == race_id) or (this breaks shit sometimes)
-                        if template_success:
-                            ctx.ctrl.click(match_result.center_point[0], match_result.center_point[1],
-                                           "Select race: " + str(RACE_LIST[race_id][1]))
-                            return True
-                        else:
-                            img[match_result.matched_area[0][1]:match_result.matched_area[1][1],
-                                match_result.matched_area[0][0]:match_result.matched_area[1][0]] = 0
-                            continue
-                    else:
-                        log.debug(f"Template too large for extracted region: template {None if template_img is None else template_img.shape}, region {race_name_img.shape}")
-            img[match_result.matched_area[0][1]:match_result.matched_area[1][1],
-            match_result.matched_area[0][0]:match_result.matched_area[1][0]] = 0
-        else:
+        if not match_result.find_match:
             break
+        pos = match_result.matched_area
+        pos_center = match_result.center_point
+        if 685 < pos_center[1] < 1110:
+            y1 = max(0, pos[0][1] - 120)
+            y2 = min(img_height, pos[1][1] + 60)
+            x1 = max(0, pos[0][0] - 250)
+            x2 = min(img_width, pos[1][0] + 400)
+            race_name_img = img[y1:y2, x1:x2]
+
+            if race_name_img.shape[0] > 0 and race_name_img.shape[1] > 0:
+                template_img = target_race_template.template_image
+                if (template_img is not None and
+                    race_name_img.shape[0] >= template_img.shape[0] and
+                    race_name_img.shape[1] >= template_img.shape[1]):
+                    template_match_result = image_match(race_name_img, target_race_template)
+                    if template_match_result.find_match:
+                        log.info(f"Race {race_id} matched")
+                        ctx.ctrl.click(pos_center[0], pos_center[1],
+                                       "Select race: " + str(RACE_LIST[race_id][1]))
+                        return True
+
+        img[pos[0][1]:pos[1][1], pos[0][0]:pos[1][0]] = 0
+        img = img.copy()
     return False
 
 
@@ -1013,14 +837,7 @@ def find_skill(ctx: UmamusumeContext, img, skill: list[str], learn_any_skill: bo
                                     hint_level = best_lvl
                     except Exception as e:
                         log.debug(f"hint level error: {e}")
-                    circle_type = 0
-                    try:
-                        circle_type = detect_circle_type(skill_name_img)
-                    except Exception:
-                        pass
-                    circle_label = {0: "", 1: " ○", 2: " ◎"}[circle_type]
-                    log.info(f"detected text='{detected_text}' matched skill='{matched_skill}' Hint: lv {hint_level}{circle_label}")
-                    log_detected_skill(name_for_match, "menu", hint_level=hint_level)
+                    log.info(f"detected text='{detected_text}' matched skill='{matched_skill}'")
                     target_match = None
                     for target in skill:
                         if (normalize_text_for_match(name_for_match) == normalize_text_for_match(target)
@@ -1028,11 +845,6 @@ def find_skill(ctx: UmamusumeContext, img, skill: list[str], learn_any_skill: bo
                             target_match = target
                             break
                     
-                    if getattr(ctx.cultivate_detail, 'skip_double_circle_unless_high_hint', False):
-                        if circle_type == 2 and hint_level < 4:
-                            img[match_result.matched_area[0][1]:match_result.matched_area[1][1],
-                            match_result.matched_area[0][0]:match_result.matched_area[1][0]] = 0
-                            continue
                     if target_match is not None or learn_any_skill:
                         tmp_img = ctx.ctrl.get_screen()
                         pt_text = re.sub("\\D", "", ocr_en(tmp_img[400: 440, 490: 665]))
@@ -1074,6 +886,7 @@ def find_skill(ctx: UmamusumeContext, img, skill: list[str], learn_any_skill: bo
 
             img[match_result.matched_area[0][1]:match_result.matched_area[1][1],
             match_result.matched_area[0][0]:match_result.matched_area[1][0]] = 0
+            img = img.copy()
 
         else:
             break
@@ -1153,13 +966,7 @@ def get_skill_list(img, skill: list[str], skill_blacklist: list[str]) -> list:
                                 hint_level = lvl
                 except Exception as e:
                     log.debug(f"hint level error: {e}")
-                circle_type = 0
-                try:
-                    circle_type = detect_circle_type(skill_name_img)
-                except Exception:
-                    pass
-                circle_label = {0: "", 1: " ○", 2: " ◎"}[circle_type]
-                log.info(f"detected text='{detected_text}' matched skill='{matched_skill}' Hint: lv {hint_level}{circle_label}")
+                log.info(f"detected text='{detected_text}' matched skill='{matched_skill}' Hint: lv {hint_level}")
                 normalized_name = normalize_text_for_match(name_for_match)
                 in_blacklist = any(normalized_name == normalize_text_for_match(b) for b in skill_blacklist)
                 
@@ -1188,10 +995,10 @@ def get_skill_list(img, skill: list[str], skill_blacklist: list[str]) -> list:
                                 "subsequent_skill": "",
                                 "available": available,
                                 "hint_level": int(hint_level),
-                                "is_double_circle": circle_type == 2,
                                 "y_pos": int(pos_center[1])})
             img[match_result.matched_area[0][1]:match_result.matched_area[1][1],
                 match_result.matched_area[0][0]:match_result.matched_area[1][0]] = 0
+            img = img.copy()
 
         # Parse previously obtained skills
         match_result = image_match(img, REF_SKILL_LEARNED)
@@ -1218,6 +1025,7 @@ def get_skill_list(img, skill: list[str], skill_blacklist: list[str]) -> list:
                             "y_pos": int(pos_center[1])})
             img[match_result.matched_area[0][1]:match_result.matched_area[1][1],
                 match_result.matched_area[0][0]:match_result.matched_area[1][0]] = 0
+            img = img.copy()
         if all_skill_scanned:
             break
 
@@ -1250,6 +1058,7 @@ def parse_factor(ctx: UmamusumeContext):
                     break
             img[match_result.matched_area[0][1]:match_result.matched_area[1][1],
             match_result.matched_area[0][0]:match_result.matched_area[1][0]] = 0
+            img = img.copy()
             factor_info[0] = factor_name
             factor_info[1] = factor_level
             factor_list.append(factor_info)
@@ -1259,35 +1068,3 @@ def parse_factor(ctx: UmamusumeContext):
     ctx.task.detail.cultivate_result['factor_list'] = factor_list
 
 
-def preprocess_wiki_image_for_ingame_matching(template_img):
-    try:
-        import cv2
-        import numpy as np
-        
-        # Convert to grayscale if not already
-        if len(template_img.shape) == 3:
-            template_img = cv2.cvtColor(template_img, cv2.COLOR_BGR2GRAY)
-        
-        # Apply preprocessing steps to make wiki images match in-game better
-        
-        # 1. Resize to common in-game resolution
-        height, width = template_img.shape
-        if width > 400:  # If image is too large
-            scale = 400 / width
-            new_width = int(width * scale)
-            new_height = int(height * scale)
-            template_img = cv2.resize(template_img, (new_width, new_height))
-        
-        # 2. Apply slight blur to match in-game rendering
-        template_img = cv2.GaussianBlur(template_img, (3, 3), 0)
-        
-        # 3. Adjust contrast to match in-game text rendering
-        template_img = cv2.convertScaleAbs(template_img, alpha=1.1, beta=5)
-        
-        # 4. Apply slight noise reduction
-        template_img = cv2.medianBlur(template_img, 3)
-        
-        return template_img
-    except Exception as e:
-        log.debug(f"Image preprocessing failed: {e}")
-        return template_img

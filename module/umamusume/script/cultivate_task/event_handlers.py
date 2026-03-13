@@ -101,7 +101,7 @@ def script_cultivate_event(ctx: UmamusumeContext):
     except Exception:
         pass
 
-    ctx.cultivate_detail.event_cooldown_until = time.time() + 3.0
+    ctx.cultivate_detail.event_cooldown_until = time.time() + 1.5
 
     log.info("Event handler called")
     
@@ -127,6 +127,8 @@ def script_cultivate_event(ctx: UmamusumeContext):
         h, w = event_name_img.shape[:2]
         event_name_img_upscaled = cv2.resize(event_name_img, (w * 2, h * 2), interpolation=cv2.INTER_CUBIC)
         event_name = ocr_line(event_name_img_upscaled, lang="en")
+    if isinstance(event_name, str) and len(event_name.strip()) <= 1:
+        return
     try:
         from bot.recog.ocr import find_similar_text
         event_blacklist = [
@@ -219,11 +221,11 @@ def script_cultivate_event(ctx: UmamusumeContext):
         choice_index = 2
 
     if choice_source == "database" and expected_count >= 2:
-        deadline = time.time() + 3.0
+        deadline = time.time() + 1.5
         while time.time() < deadline:
             if isinstance(selectors, list) and len(selectors) >= expected_count:
                 break
-            time.sleep(0.3)
+            time.sleep(0.2)
             try:
                 img_wait = ctx.ctrl.get_screen()
                 if img_wait is not None and getattr(img_wait, 'size', 0) > 0:
