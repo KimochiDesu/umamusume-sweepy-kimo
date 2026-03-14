@@ -100,16 +100,11 @@ def script_cultivate_main_menu(ctx: UmamusumeContext):
         medic_px = img_rgb_check[1125, 40]
         medic_lit = medic_px[0] > 200 and medic_px[1] > 200 and medic_px[2] > 200
         if not medic_lit:
-            ctx.cultivate_detail.mant_afflictions_checked = False
-            ctx.cultivate_detail.mant_medic_was_available = False
-        elif medic_lit and not ctx.cultivate_detail.mant_medic_was_available:
-            ctx.cultivate_detail.mant_medic_was_available = True
-            ctx.cultivate_detail.mant_afflictions_checked = False
-        if medic_lit and not ctx.cultivate_detail.mant_afflictions_checked:
+            ctx.cultivate_detail.mant_afflictions = []
+        elif medic_lit and not ctx.cultivate_detail.mant_afflictions:
             from module.umamusume.scenario.mant.afflictions import detect_afflictions
             afflictions = detect_afflictions(ctx)
             ctx.cultivate_detail.mant_afflictions = afflictions
-            ctx.cultivate_detail.mant_afflictions_checked = True
             ctx.cultivate_detail.turn_info.parse_main_menu_finish = False
             return
 

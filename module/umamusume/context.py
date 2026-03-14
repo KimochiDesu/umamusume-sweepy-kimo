@@ -126,8 +126,6 @@ class CultivateContextDetail:
         self.final_skill_sweep_active = False
         self.mant_shop_items = []
         self.mant_shop_scanned_this_turn = False
-        self.mant_medic_was_available = False
-        self.mant_afflictions_checked = False
         self.mant_afflictions = []
         self.user_provided_priority = False
         self.event_overrides = {}
