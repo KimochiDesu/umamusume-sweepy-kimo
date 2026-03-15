@@ -668,9 +668,9 @@ def script_info(ctx: UmamusumeContext):
                     return
             except Exception:
                 pass
-            ctx.ctrl.click(200, 1210, "Exchange Complete close")
+            ctx.ctrl.click(200, 1210)
             from module.umamusume.asset.template import REF_MANT_SHOP_TITLE
-            for _ in range(20):
+            for _ in range(30):
                 time.sleep(0.15)
                 screen = ctx.ctrl.get_screen(to_gray=True)
                 if image_match(screen, REF_MANT_SHOP_TITLE).find_match:

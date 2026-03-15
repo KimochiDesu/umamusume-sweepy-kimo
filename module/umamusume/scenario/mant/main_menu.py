@@ -56,17 +56,23 @@ def handle_mant_shop_scan(ctx, current_date):
         bought = False
         mant_cfg = getattr(ctx.task.detail.scenario_config, 'mant_config', None)
         if mant_cfg and mant_cfg.item_tiers:
-            tier1_slugs = [slug for slug, tier in mant_cfg.item_tiers.items() if tier == 1]
+            coins = ctx.cultivate_detail.mant_coins
             shop_names = [name for name, _, _ in items_list]
             shop_slugs = [display_to_slug(n) for n in shop_names]
             targets = []
-            for slug in tier1_slugs:
-                if slug in shop_slugs:
-                    display = SLUG_TO_DISPLAY.get(slug)
-                    if display:
-                        cost = SHOP_ITEM_COSTS.get(display, 9999)
-                        if cost <= ctx.cultivate_detail.mant_coins:
-                            targets.append(display)
+            for tier in range(1, mant_cfg.tier_count + 1):
+                if tier > 1:
+                    threshold = mant_cfg.tier_thresholds.get(tier, 0)
+                    if coins < threshold:
+                        continue
+                tier_slugs = [slug for slug, t in mant_cfg.item_tiers.items() if t == tier]
+                for slug in tier_slugs:
+                    if slug in shop_slugs:
+                        display = SLUG_TO_DISPLAY.get(slug)
+                        if display:
+                            cost = SHOP_ITEM_COSTS.get(display, 9999)
+                            if cost <= coins:
+                                targets.append(display)
             if targets:
                 bought = buy_shop_items(ctx, targets, items_list, ratio, drag_ratio, first_item_gy)
 
