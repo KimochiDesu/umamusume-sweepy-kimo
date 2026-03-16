@@ -220,6 +220,14 @@ def is_effect_text(text):
     return any(lower.startswith(p) for p in EFFECT_PREFIXES)
 
 
+def is_purchased(frame, item_y):
+    row_y1 = max(0, int(item_y) - 20)
+    row_y2 = min(frame.shape[0], int(item_y) + 60)
+    roi = frame[row_y1:row_y2, PURCHASED_CHECK_X1:PURCHASED_CHECK_X2]
+    gray = cv2.cvtColor(roi, cv2.COLOR_BGR2GRAY)
+    return float(cv2.mean(gray)[0]) < PURCHASED_BRIGHTNESS_THRESHOLD
+
+
 def classify_items_in_frame(frame):
     name_roi = frame[SHOP_ROI_Y1:SHOP_ROI_Y2, OCR_NAME_X1:OCR_NAME_X2]
     raw = ocr(name_roi, lang="en")
@@ -265,11 +273,41 @@ def classify_items_in_frame(frame):
         if is_dup:
             continue
 
+        if is_purchased(frame, abs_y):
+            continue
+
         items.append((matched_name, match_score, abs_y))
         seen_y.append(abs_y)
 
     items.sort(key=lambda r: r[2])
     return items, False
+
+
+def name_based_shift(by_frame, prev_fi, curr_fi):
+    prev_items = [(k, y) for k, c, y in by_frame[prev_fi]]
+    curr_items = [(k, y) for k, c, y in by_frame[curr_fi]]
+    shifts = []
+    used_curr = set()
+    for pk, py in prev_items:
+        best_shift = None
+        best_dist = 9999
+        best_ci = -1
+        for ci, (ck, cy) in enumerate(curr_items):
+            if ci in used_curr:
+                continue
+            if pk == ck:
+                dist = abs(py - cy)
+                if dist < best_dist:
+                    best_dist = dist
+                    best_shift = py - cy
+                    best_ci = ci
+        if best_shift is not None:
+            shifts.append(best_shift)
+            used_curr.add(best_ci)
+    if shifts:
+        shifts.sort()
+        return shifts[len(shifts) // 2]
+    return 0
 
 
 def dedup_detections(all_detections, captured_frames):
@@ -282,40 +320,35 @@ def dedup_detections(all_detections, captured_frames):
         return []
 
     cumulative_shift = {sorted_frames[0]: 0}
+    recent_shifts = []
     for i in range(1, len(sorted_frames)):
         prev_fi = sorted_frames[i - 1]
         curr_fi = sorted_frames[i]
 
-        content_shift = 0
+        name_shift = name_based_shift(by_frame, prev_fi, curr_fi)
+
+        tmpl_shift = 0
         if prev_fi in captured_frames and curr_fi in captured_frames:
             shift, conf = find_content_shift(captured_frames[prev_fi], captured_frames[curr_fi])
             if conf > 0.85 and shift > 0:
-                content_shift = shift
+                tmpl_shift = shift
 
-        if content_shift == 0:
-            prev_items = [(k, y) for k, c, y in by_frame[prev_fi]]
-            curr_items = [(k, y) for k, c, y in by_frame[curr_fi]]
-            shifts = []
-            used_curr = set()
-            for pk, py in prev_items:
-                best_shift = None
-                best_dist = 9999
-                best_ci = -1
-                for ci, (ck, cy) in enumerate(curr_items):
-                    if ci in used_curr:
-                        continue
-                    if pk == ck:
-                        dist = abs(py - cy)
-                        if dist < best_dist:
-                            best_dist = dist
-                            best_shift = py - cy
-                            best_ci = ci
-                if best_shift is not None:
-                    shifts.append(best_shift)
-                    used_curr.add(best_ci)
-            if shifts:
-                shifts.sort()
-                content_shift = shifts[len(shifts) // 2]
+        median_shift = 0
+        if recent_shifts:
+            rs = sorted(recent_shifts)
+            median_shift = rs[len(rs) // 2]
+
+        content_shift = tmpl_shift
+        if name_shift > 0:
+            if tmpl_shift > 0 and abs(tmpl_shift - name_shift) > 30:
+                content_shift = name_shift
+            elif tmpl_shift == 0:
+                content_shift = name_shift
+        if median_shift > 0 and content_shift > median_shift * 2:
+            content_shift = name_shift if name_shift > 0 else median_shift
+
+        if content_shift > 0:
+            recent_shifts.append(content_shift)
 
         cumulative_shift[curr_fi] = cumulative_shift[prev_fi] + content_shift
 
