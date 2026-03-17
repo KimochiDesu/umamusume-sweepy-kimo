@@ -560,79 +560,81 @@ def pick_best_match(matches, target_gy, first_item_gy, thumb_pos, ratio):
 
 
 def buy_shop_items(ctx, target_names, items_list, ratio, drag_ratio, first_item_gy):
-    targets = [(name, conf, gy) for name, conf, gy in items_list if name in target_names]
-    if not targets:
+    remaining = Counter(target_names)
+    if not remaining:
         ctx.ctrl.click(BACK_BTN_X, BACK_BTN_Y)
         time.sleep(1)
         return False
 
-    targets.sort(key=lambda t: t[2])
-    viewport_center = (CONTENT_TOP + CONTENT_BOT) / 2
     selected = 0
-    done_gys = set()
+    clicked_positions = set()
 
     scroll_to_top(ctx)
+    trigger_scrollbar(ctx)
 
-    for name, conf, target_gy in targets:
+    img = ctx.ctrl.get_screen()
+    img_rgb = cv2.cvtColor(img, cv2.COLOR_BGR2RGB)
+    thumb = find_thumb(img_rgb)
+
+    for _ in range(80):
+        if not any(v > 0 for v in remaining.values()):
+            break
+
+        frame = ctx.ctrl.get_screen()
+        results, _ = classify_items_in_frame(frame)
+
+        for item_name, conf, abs_y in results:
+            if remaining.get(item_name, 0) <= 0:
+                continue
+            pos_key = int(abs_y) // 30
+            if pos_key in clicked_positions:
+                continue
+            if is_unbuyable(frame, abs_y):
+                continue
+
+            click_y = int(abs_y) + 20
+            ctx.ctrl.click(CHECKBOX_X, click_y)
+            time.sleep(0.3)
+            selected += 1
+            remaining[item_name] -= 1
+            clicked_positions.add(pos_key)
+            log.debug(f"Checked '{item_name}' at y={abs_y:.0f}, remaining={remaining[item_name]}")
+
         trigger_scrollbar(ctx)
         img = ctx.ctrl.get_screen()
         img_rgb = cv2.cvtColor(img, cv2.COLOR_BGR2RGB)
-        thumb = find_thumb(img_rgb)
-
-        content_offset = (target_gy - first_item_gy) - (viewport_center - CONTENT_TOP - 40)
-        if content_offset < 0:
-            content_offset = 0
-        thumb_target = TRACK_TOP + content_offset / ratio
-        thumb_target = int(min(max(thumb_target, TRACK_TOP), TRACK_BOT - 20))
-
-        if thumb:
-            current_thumb = (thumb[0] + thumb[1]) // 2
-            adjusted_target = int(TRACK_TOP + (thumb_target - TRACK_TOP) * drag_ratio)
-            adjusted_target = min(adjusted_target, TRACK_BOT - 10)
-            if abs(adjusted_target - current_thumb) > 5:
-                sb_drag(ctx, current_thumb, adjusted_target)
-                trigger_scrollbar(ctx)
-                time.sleep(0.3)
-
-        thumb_pos = thumb[0] if thumb else TRACK_TOP
-        frame = ctx.ctrl.get_screen()
-        results, _ = classify_items_in_frame(frame)
-        matches = [(k, c, y) for k, c, y in results if k == name]
-
-        if not matches:
-            for adj in [20, 40, -20, 60]:
-                trigger_scrollbar(ctx)
-                img_a = ctx.ctrl.get_screen()
-                img_a_rgb = cv2.cvtColor(img_a, cv2.COLOR_BGR2RGB)
-                t = find_thumb(img_a_rgb)
-                if t:
-                    sb_drag(ctx, (t[0] + t[1]) // 2, (t[0] + t[1]) // 2 + adj)
-                    trigger_scrollbar(ctx)
-                    time.sleep(0.3)
-                    thumb_pos = t[0]
+        if at_bottom(img_rgb):
+            if any(v > 0 for v in remaining.values()):
+                clicked_positions.clear()
                 frame = ctx.ctrl.get_screen()
                 results, _ = classify_items_in_frame(frame)
-                matches = [(k, c, y) for k, c, y in results if k == name]
-                if matches:
-                    break
+                for item_name, conf, abs_y in results:
+                    if remaining.get(item_name, 0) <= 0:
+                        continue
+                    if is_unbuyable(frame, abs_y):
+                        continue
+                    click_y = int(abs_y) + 20
+                    ctx.ctrl.click(CHECKBOX_X, click_y)
+                    time.sleep(0.3)
+                    selected += 1
+                    remaining[item_name] -= 1
+                    log.debug(f"Bottom-edge: checked '{item_name}' at y={abs_y:.0f}")
+            break
 
-        if not matches:
-            continue
-
-        best = pick_best_match(matches, target_gy, first_item_gy, thumb_pos, ratio)
-        click_y = int(best[2]) + 20
-
-        if is_unbuyable(frame, best[2]):
-            continue
-
-        ctx.ctrl.click(CHECKBOX_X, click_y)
-        time.sleep(0.3)
-        selected += 1
-        done_gys.add(target_gy)
+        thumb = find_thumb(img_rgb)
+        if thumb is None:
+            break
+        cursor = (thumb[0] + thumb[1]) // 2
+        th = thumb[1] - thumb[0]
+        step = max(th // 2, 10)
+        next_y = min(TRACK_BOT, cursor + step)
+        if next_y <= cursor:
+            break
+        sb_drag(ctx, cursor, next_y)
+        time.sleep(0.2)
+        clicked_positions.clear()
 
     if selected == 0:
-        ctx.ctrl.click(BACK_BTN_X, BACK_BTN_Y)
-        time.sleep(1)
         return False
 
     ctx.ctrl.click(CONFIRM_BTN_X, CONFIRM_BTN_Y)
