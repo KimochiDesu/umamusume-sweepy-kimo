@@ -66,7 +66,7 @@ def script_cultivate_training_select(ctx: UmamusumeContext):
 
     if turn_op is not None:
         try:
-            cached_stats = getattr(ctx.cultivate_detail, '_last_decision_stats', None)
+            cached_stats = getattr(ctx.cultivate_detail, 'last_decision_stats', None)
             if cached_stats is not None:
                 uma = ctx.cultivate_detail.turn_info.uma_attribute
                 current_stats = (uma.speed, uma.stamina, uma.power, uma.will, uma.intelligence)
@@ -761,7 +761,7 @@ def script_cultivate_training_select(ctx: UmamusumeContext):
         ctx.cultivate_detail.turn_info.cached_training_type = local_training_type
         try:
             uma = ctx.cultivate_detail.turn_info.uma_attribute
-            ctx.cultivate_detail._last_decision_stats = (uma.speed, uma.stamina, uma.power, uma.will, uma.intelligence)
+            ctx.cultivate_detail.last_decision_stats = (uma.speed, uma.stamina, uma.power, uma.will, uma.intelligence)
         except Exception:
             pass
        
@@ -836,6 +836,13 @@ def script_cultivate_training_select(ctx: UmamusumeContext):
     
     op = ctx.cultivate_detail.turn_info.turn_operation
     if op.turn_operation_type == TurnOperationType.TURN_OPERATION_TYPE_TRAINING:
+        try:
+            if ctx.cultivate_detail.scenario.scenario_type() == ScenarioType.SCENARIO_TYPE_MANT:
+                from module.umamusume.scenario.mant.inventory import whistle_loop
+                whistle_loop(ctx)
+        except Exception:
+            pass
+
         if op.training_type == TrainingType.TRAINING_TYPE_UNKNOWN:
             op.training_type = local_training_type
         

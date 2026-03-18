@@ -330,7 +330,7 @@ def dedup_names(all_detections, captured_frames):
     return items_list
 
 
-def scan_inventory(ctx):
+def scan_inventory(ctx, stop_when_found=None):
     trigger_scrollbar(ctx)
     scroll_to_top(ctx)
     trigger_scrollbar(ctx)
@@ -383,6 +383,28 @@ def scan_inventory(ctx):
     for name, conf, abs_y in first_results:
         all_detections.append((name, conf, 0, abs_y))
 
+    if stop_when_found and any(n == stop_when_found for n, _, _ in first_results):
+        items_names = [(stop_when_found, 1.0, 0.0)]
+        scroll_to_top(ctx)
+        trigger_scrollbar(ctx)
+        time.sleep(0.3)
+        item_qtys = {}
+        for _ in range(6):
+            frame = ctx.ctrl.get_screen()
+            if frame is None:
+                time.sleep(0.2)
+                continue
+            results = classify_with_qty(frame)
+            for name, score, y, qty in results:
+                if name == stop_when_found and 130 < y < 1030:
+                    item_qtys[name] = qty
+                    break
+            if stop_when_found in item_qtys:
+                break
+            time.sleep(0.2)
+        qty = item_qtys.get(stop_when_found, 1)
+        return [(stop_when_found, qty)]
+
     scan_x_end = _gauss_scan_x()
     swipe_cmd = ("shell input swipe " + str(SB_X) + " " + str(start_y) +
                  " " + str(scan_x_end) + " " + str(INV_TRACK_BOT) + " " + str(swipe_dur))
@@ -406,6 +428,14 @@ def scan_inventory(ctx):
                 frame_idx += 1
             if proc.poll() is not None:
                 break
+
+            if stop_when_found:
+                try:
+                    hits_now = classify_names_only(curr) if curr is not None else []
+                    if any(n == stop_when_found for n, _, _ in hits_now):
+                        break
+                except Exception:
+                    pass
         try:
             proc.terminate()
         except Exception:
@@ -461,3 +491,169 @@ def scan_inventory(ctx):
         owned.append((name, qty))
 
     return owned
+
+
+
+def is_plus_disabled(frame, plus_x, plus_y):
+    h, w = frame.shape[:2]
+    x1 = max(0, min(w - 1, plus_x - 14))
+    x2 = max(0, min(w, plus_x + 14))
+    y1 = max(0, min(h - 1, plus_y - 14))
+    y2 = max(0, min(h, plus_y + 14))
+    if x2 <= x1 + 2 or y2 <= y1 + 2:
+        return False
+
+    patch = frame[y1:y2, x1:x2]
+    hsv = cv2.cvtColor(patch, cv2.COLOR_BGR2HSV)
+    s_mean = float(np.mean(hsv[:, :, 1]))
+    v_std = float(np.std(hsv[:, :, 2]))
+
+    return s_mean < 35 and v_std < 35
+
+
+def try_click_item_plus_once(ctx, item_name: str) -> bool:
+    trigger_scrollbar(ctx)
+    scroll_to_top(ctx)
+    trigger_scrollbar(ctx)
+    time.sleep(0.25)
+
+    def _find_item_y_on_current_screen(frame, target_name: str):
+        results = classify_names_only(frame)
+        for name, score, abs_y in results:
+            if name == target_name:
+                return abs_y
+        return None
+
+    for _ in range(60):
+        frame = ctx.ctrl.get_screen()
+        if frame is None:
+            time.sleep(0.2)
+            continue
+
+        y = _find_item_y_on_current_screen(frame, item_name)
+        if y is not None and 130 < y < 1030:
+            plus_x = 648
+            plus_y = int(round(y + 48))
+
+            frame_now = frame
+            if is_plus_disabled(frame_now, plus_x, plus_y):
+                return False
+
+            ctx.ctrl.execute_adb_shell(f"shell input tap {plus_x} {plus_y}", True)
+            time.sleep(0.25)
+            return True
+
+        trigger_scrollbar(ctx)
+        img_rgb = cv2.cvtColor(frame, cv2.COLOR_BGR2RGB)
+        if inv_at_bottom(img_rgb):
+            return False
+
+        thumb = inv_find_thumb(img_rgb)
+        if thumb is None:
+            return False
+
+        cursor = (thumb[0] + thumb[1]) // 2
+        th = thumb[1] - thumb[0]
+        next_y = min(INV_TRACK_BOT, cursor + max(th // 2, 10))
+        if next_y <= cursor:
+            return False
+        sb_drag(ctx, cursor, next_y)
+        time.sleep(0.25)
+
+    return False
+
+
+def use_training_item(ctx, item_name, quantity=1):
+    ctx.ctrl.execute_adb_shell("shell input tap 37 347", True)
+    time.sleep(0.9)
+
+    owned_items = scan_inventory(ctx, stop_when_found=item_name)
+    owned_map = {n: q for n, q in owned_items}
+    have_qty = owned_map.get(item_name, 0)
+
+    if have_qty <= 0 or have_qty < quantity:
+        ctx.ctrl.execute_adb_shell("shell input tap 187 1185", True)
+        time.sleep(0.4)
+        return False
+
+    trigger_scrollbar(ctx)
+    scroll_to_top(ctx)
+    trigger_scrollbar(ctx)
+    time.sleep(0.25)
+
+    for _ in range(quantity):
+        if not try_click_item_plus_once(ctx, item_name):
+            ctx.ctrl.execute_adb_shell("shell input tap 187 1185", True)
+            time.sleep(0.4)
+            return False
+        time.sleep(0.15)
+
+    ctx.ctrl.execute_adb_shell("shell input tap 524 1192", True)
+    time.sleep(0.25)
+    ctx.ctrl.execute_adb_shell("shell input tap 524 1192", True)
+    time.sleep(0.9)
+
+    ctx.ctrl.execute_adb_shell("shell input tap 187 1185", True)
+    time.sleep(0.35)
+    ctx.ctrl.execute_adb_shell("shell input tap 187 1185", True)
+    time.sleep(0.5)
+
+    return True
+
+
+def handle_training_whistle(ctx):
+    mant_cfg = getattr(ctx.task.detail.scenario_config, 'mant_config', None)
+    if mant_cfg is None:
+        return False
+
+    threshold = getattr(mant_cfg, 'whistle_threshold', None)
+    if threshold is None:
+        return False
+
+    scores = getattr(ctx.cultivate_detail.turn_info, 'cached_computed_scores', None)
+    if not scores or len(scores) != 5:
+        return False
+
+    if any(s >= float(threshold) for s in scores):
+        return False
+
+    owned = getattr(ctx.cultivate_detail, 'mant_owned_items', [])
+    owned_map = {n: q for n, q in owned}
+    if owned_map.get('Reset Whistle', 0) <= 0:
+        return False
+
+    ok = use_training_item(ctx, 'Reset Whistle', 1)
+    if not ok:
+        return False
+
+    owned_map['Reset Whistle'] = max(0, owned_map.get('Reset Whistle', 0) - 1)
+    updated = [(n, q) for n, q in owned_map.items() if q > 0]
+    ctx.cultivate_detail.mant_owned_items = updated
+    from module.umamusume.context import log_detected_items
+    log_detected_items(updated)
+
+    log.info('whistle used')
+
+    return True
+
+
+def whistle_loop(ctx):
+    start_date = getattr(ctx.cultivate_detail.turn_info, 'date', None)
+    while True:
+        if not ctx.task.running():
+            return
+        if getattr(ctx.cultivate_detail.turn_info, 'date', None) != start_date:
+            return
+        used = handle_training_whistle(ctx)
+        if not used:
+            return
+        time.sleep(0.8)
+        ctx.cultivate_detail.turn_info.parse_train_info_finish = False
+        ctx.cultivate_detail.turn_info.turn_operation = None
+        ctx.cultivate_detail.last_decision_stats = None
+        from module.umamusume.asset.point import RETURN_TO_CULTIVATE_MAIN_MENU
+        ctx.ctrl.click_by_point(RETURN_TO_CULTIVATE_MAIN_MENU)
+        time.sleep(0.8)
+        from module.umamusume.asset.point import TO_TRAINING_SELECT
+        ctx.ctrl.click_by_point(TO_TRAINING_SELECT)
+        time.sleep(0.8)
