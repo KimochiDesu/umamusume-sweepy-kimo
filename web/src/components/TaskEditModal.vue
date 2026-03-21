@@ -71,7 +71,13 @@
                 </div>
                 </div>
                 </div>
-              
+              <div class="form-group mt-2">
+                <label>Training Data</label>
+                <div class="d-flex align-items-center gap-2">
+                  <span style="font-size:0.85em;color:var(--muted-2)">Press after changing config, deck, or uma to reset training score history</span>
+                  <button type="button" class="btn btn-sm btn-outline-danger" @click="clearCareerData">Clear Training Data</button>
+                </div>
+              </div>
               <div class="row" v-if="selectedScenario === 2">
                 <div class="col-4">
                   <div class="form-group">
@@ -207,17 +213,6 @@
                                 <input type="range" class="hint-slider" v-model.number="mantSkipRacePercentile" min="0" max="100" />
                                 <span class="mant-threshold-val">{{ mantSkipRacePercentile }}</span>
                               </div>
-                            </div>
-                          </div>
-                        </div>
-                      </div>
-                      <div class="mant-thresholds mt-3">
-                        <label>Training Data</label>
-                        <div class="mant-threshold-group">
-                          <div class="mant-threshold-row">
-                            <div class="mant-threshold-controls">
-                              <span class="mant-threshold-label">Press after changing config, deck, or uma to reset training score history</span>
-                              <button class="btn btn-sm btn-outline-danger mt-1" @click="clearCareerData">Clear Training Data</button>
                             </div>
                           </div>
                         </div>

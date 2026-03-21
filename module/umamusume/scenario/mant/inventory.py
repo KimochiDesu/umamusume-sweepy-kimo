@@ -628,17 +628,20 @@ def use_training_item(ctx, item_name, quantity=1):
         time.sleep(0.15)
 
     ctx.ctrl.execute_adb_shell("shell input tap 530 1205", True)
-    time.sleep(0.3)
 
-    for _ in range(15):
+    clicked_use = False
+    for _ in range(20):
+        time.sleep(0.17)
         frame = ctx.ctrl.get_screen()
         if has_use_training_items_button(frame):
             ctx.ctrl.execute_adb_shell("shell input tap 530 1205", True)
+            clicked_use = True
             time.sleep(0.5)
             continue
-        if not is_items_panel_open(frame):
+        if clicked_use and not is_items_panel_open(frame):
             return True
-        time.sleep(0.2)
+        if not clicked_use and is_items_panel_open(frame):
+            ctx.ctrl.execute_adb_shell("shell input tap 530 1205", True)
 
     return True
 
