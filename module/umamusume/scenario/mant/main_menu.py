@@ -32,32 +32,23 @@ def read_shop_coins(img, is_summer, is_climax):
     return -1
 
 
-INVENTORY_OPEN_X = 552
-INVENTORY_OPEN_Y = 771
-INVENTORY_CLOSE_X = 168
-INVENTORY_CLOSE_Y = 1181
-
-
 def handle_mant_inventory_scan(ctx, current_date):
     if ctx.cultivate_detail.mant_inventory_scanned:
         return False
     if current_date < 13:
         return False
 
-    from module.umamusume.scenario.mant.inventory import scan_inventory
+    from module.umamusume.scenario.mant.inventory import scan_inventory, open_items_panel, close_items_panel
     from module.umamusume.context import log_detected_items
-    import time as t
 
-    ctx.ctrl.click(INVENTORY_OPEN_X, INVENTORY_OPEN_Y, "open inventory")
-    t.sleep(1.5)
+    open_items_panel(ctx)
 
     owned = scan_inventory(ctx)
     ctx.cultivate_detail.mant_owned_items = owned
     ctx.cultivate_detail.mant_inventory_scanned = True
     log_detected_items(owned)
 
-    ctx.ctrl.click(INVENTORY_CLOSE_X, INVENTORY_CLOSE_Y, "close inventory")
-    t.sleep(1.0)
+    close_items_panel(ctx)
     ctx.cultivate_detail.turn_info.parse_main_menu_finish = False
     return True
 

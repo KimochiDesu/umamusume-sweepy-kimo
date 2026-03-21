@@ -16,6 +16,7 @@ from module.umamusume.scenario.mant.shop import (
     _gauss_scan_x,
 )
 
+
 log = logger.get_logger(__name__)
 
 INV_TRACK_TOP = 120
@@ -555,14 +556,53 @@ def try_click_item_plus_once(ctx, item_name: str) -> bool:
         time.sleep(0.25)
 
 
-def use_training_item(ctx, item_name, quantity=1):
-    ctx.ctrl.execute_adb_shell("shell input tap 37 347", True)
+def is_on_training_screen(frame):
+    if frame is None:
+        return False
+    from bot.recog.image_matcher import image_match
+    from module.umamusume.asset.template import UI_CULTIVATE_TRAINING_SELECT
+    gray = cv2.cvtColor(frame, cv2.COLOR_BGR2GRAY)
+    return image_match(gray, UI_CULTIVATE_TRAINING_SELECT).find_match
+
+
+def is_on_main_menu(frame):
+    if frame is None:
+        return False
+    from bot.recog.image_matcher import image_match
+    from module.umamusume.asset.template import UI_CULTIVATE_MAIN_MENU
+    gray = cv2.cvtColor(frame, cv2.COLOR_BGR2GRAY)
+    return image_match(gray, UI_CULTIVATE_MAIN_MENU).find_match
+
+
+def is_items_panel_open(frame):
+    if frame is None:
+        return False
+    from bot.recog.image_matcher import image_match
+    from module.umamusume.asset.template import UI_CULTIVATE_TRAINING_ITEMS
+    gray = cv2.cvtColor(frame, cv2.COLOR_BGR2GRAY)
+    return image_match(gray, UI_CULTIVATE_TRAINING_ITEMS).find_match
+
+
+def open_items_panel(ctx):
+    frame = ctx.ctrl.get_screen()
+    if is_on_training_screen(frame):
+        ctx.ctrl.execute_adb_shell("shell input tap 37 347", True)
+    else:
+        ctx.ctrl.execute_adb_shell("shell input tap 552 771", True)
     time.sleep(0.9)
+
+
+def close_items_panel(ctx):
+    ctx.ctrl.execute_adb_shell("shell input tap 187 1185", True)
+    time.sleep(0.5)
+
+
+def use_training_item(ctx, item_name, quantity=1):
+    open_items_panel(ctx)
 
     for _ in range(quantity):
         if not try_click_item_plus_once(ctx, item_name):
-            ctx.ctrl.execute_adb_shell("shell input tap 187 1185", True)
-            time.sleep(0.4)
+            close_items_panel(ctx)
             owned = getattr(ctx.cultivate_detail, 'mant_owned_items', [])
             owned_map = {n: q for n, q in owned}
             if owned_map.get(item_name, 0) > 0:
@@ -571,15 +611,19 @@ def use_training_item(ctx, item_name, quantity=1):
             return False
         time.sleep(0.15)
 
-    ctx.ctrl.execute_adb_shell("shell input tap 524 1192", True)
-    time.sleep(0.25)
-    ctx.ctrl.execute_adb_shell("shell input tap 524 1192", True)
-    time.sleep(0.5)
+    deadline = time.time() + 3.0
+    while time.time() < deadline:
+        ctx.ctrl.execute_adb_shell("shell input tap 524 1192", True)
+        time.sleep(0.15)
+        if not is_items_panel_open(ctx.ctrl.get_screen()):
+            return True
 
-    ctx.ctrl.execute_adb_shell("shell input tap 187 1185", True)
-    time.sleep(0.35)
-    ctx.ctrl.execute_adb_shell("shell input tap 187 1185", True)
-    time.sleep(0.5)
+    deadline = time.time() + 3.0
+    while time.time() < deadline:
+        ctx.ctrl.execute_adb_shell("shell input tap 187 1185", True)
+        time.sleep(0.15)
+        if not is_items_panel_open(ctx.ctrl.get_screen()):
+            return True
 
     return True
 
