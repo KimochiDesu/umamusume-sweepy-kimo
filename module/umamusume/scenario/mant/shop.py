@@ -507,10 +507,8 @@ EXCHANGE_OCR_X1 = 60
 EXCHANGE_OCR_X2 = 560
 EXCHANGE_PLUS_X = 648
 EXCHANGE_PLUS_OFFSET_Y = 38
-EXCHANGE_QTY_X1 = 230
-EXCHANGE_QTY_X2 = 400
-EXCHANGE_QTY_Y_OFFSET = 15
-EXCHANGE_QTY_Y_HEIGHT = 35
+EXCHANGE_QTY_X1 = 280
+EXCHANGE_QTY_X2 = 420
 
 CHECKBOX_X = 630
 CHECKBOX_FILL_X1 = 615
@@ -563,38 +561,39 @@ def pick_best_match(matches, target_gy, first_item_gy, thumb_pos, ratio):
 
 
 def is_item_held_on_exchange(frame, item_y):
-    check_y = int(item_y + EXCHANGE_PLUS_OFFSET_Y)
-    check_x = EXCHANGE_PLUS_X
     h, w = frame.shape[:2]
-    if check_y < 0 or check_y >= h or check_x < 0 or check_x >= w:
-        return False
-    y1 = max(0, check_y - 8)
-    y2 = min(h, check_y + 8)
-    x1 = max(0, check_x - 8)
-    x2 = min(w, check_x + 8)
-    patch = frame[y1:y2, x1:x2]
-    rgb = cv2.cvtColor(patch, cv2.COLOR_BGR2RGB)
-    g_mean = float(np.mean(rgb[:, :, 1]))
-    r_mean = float(np.mean(rgb[:, :, 0]))
-    b_mean = float(np.mean(rgb[:, :, 2]))
-    return g_mean > 130 and g_mean > r_mean and g_mean > b_mean
+    for offset in range(15, 56, 5):
+        check_y = int(item_y + offset)
+        if check_y < 4 or check_y >= h - 4:
+            continue
+        patch = frame[check_y - 4:check_y + 4, EXCHANGE_PLUS_X - 4:EXCHANGE_PLUS_X + 4]
+        rgb = cv2.cvtColor(patch, cv2.COLOR_BGR2RGB)
+        g = float(np.mean(rgb[:, :, 1]))
+        r = float(np.mean(rgb[:, :, 0]))
+        b = float(np.mean(rgb[:, :, 2]))
+        if g > 150 and g > r + 20 and g > b + 20:
+            return True
+    return False
 
 
 def read_exchange_qty(frame, item_y):
-    qty_y1 = int(item_y + EXCHANGE_QTY_Y_OFFSET)
-    qty_y2 = int(item_y + EXCHANGE_QTY_Y_OFFSET + EXCHANGE_QTY_Y_HEIGHT)
-    h, w = frame.shape[:2]
-    if qty_y1 < 0 or qty_y2 > h:
-        return 1
-    roi = frame[qty_y1:qty_y2, EXCHANGE_QTY_X1:EXCHANGE_QTY_X2]
-    raw = ocr(roi, lang="en")
-    if not raw or not raw[0]:
-        return 1
-    all_text = ' '.join(entry[1][0] for entry in raw[0] if entry and len(entry) >= 2)
-    digits = re.findall(r'\d+', all_text)
-    if digits:
-        return int(digits[-1])
-    return 1
+    h = frame.shape[0]
+    for y_off in [25, 30, 20]:
+        qty_y1 = int(item_y + y_off)
+        qty_y2 = int(item_y + y_off + 35)
+        if qty_y1 < 0 or qty_y2 > h:
+            continue
+        roi = frame[qty_y1:qty_y2, EXCHANGE_QTY_X1:EXCHANGE_QTY_X2]
+        raw = ocr(roi, lang="en")
+        if not raw or not raw[0]:
+            continue
+        all_text = ' '.join(entry[1][0] for entry in raw[0] if entry and len(entry) >= 2)
+        digits = re.findall(r'\d+', all_text)
+        if digits:
+            val = int(digits[-1])
+            if val < 10:
+                return val
+    return -1
 
 
 def classify_exchange_items(frame):
@@ -634,8 +633,12 @@ def classify_exchange_items(frame):
         is_dup = any(abs(abs_y - sy) < 40 for sy in seen_y)
         if is_dup:
             continue
-        held = is_item_held_on_exchange(frame, abs_y)
-        qty = read_exchange_qty(frame, abs_y) if held else 0
+        qty = read_exchange_qty(frame, abs_y)
+        if qty >= 0:
+            held = qty > 0
+        else:
+            held = is_item_held_on_exchange(frame, abs_y)
+            qty = 1 if held else 0
         items.append((matched_name, held, qty, abs_y))
         seen_y.append(abs_y)
     items.sort(key=lambda r: r[3])
@@ -762,14 +765,26 @@ def buy_shop_items(ctx, target_names, items_list, ratio, drag_ratio, first_item_
     ctx.ctrl.click(CONFIRM_BTN_X, CONFIRM_BTN_Y)
 
     from bot.recog.image_matcher import image_match
+    from bot.recog.ocr import ocr_line
     from module.umamusume.asset.template import UI_INFO
-    for _ in range(30):
-        time.sleep(0.2)
+    from module.umamusume.script.cultivate_task.info import find_similar_text
+    exchange_ready = False
+    for _ in range(40):
+        time.sleep(0.3)
         screen = ctx.ctrl.get_screen(to_gray=True)
-        if image_match(screen, UI_INFO).find_match:
-            break
+        result = image_match(screen, UI_INFO)
+        if result.find_match:
+            pos = result.matched_area
+            title_img = screen[pos[0][1] - 5:pos[1][1] + 5, pos[0][0] + 150:pos[1][0] + 405]
+            title_text = ocr_line(title_img)
+            title_text = find_similar_text(title_text, ["Exchange Complete"], 0.7)
+            if title_text == "Exchange Complete":
+                exchange_ready = True
+                break
 
-    held_items = scan_exchange_complete(ctx)
+    held_items = {}
+    if exchange_ready:
+        held_items = scan_exchange_complete(ctx)
 
     ctx.ctrl.click(EXCHANGE_CLOSE_X, EXCHANGE_CLOSE_Y)
     time.sleep(0.5)
