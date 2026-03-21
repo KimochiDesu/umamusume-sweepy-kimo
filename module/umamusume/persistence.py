@@ -8,6 +8,9 @@ log = logger.get_logger(__name__)
 PERSISTENCE_FILE = os.path.join(os.path.dirname(__file__), '..', '..', 'career_data.json')
 PERSISTENCE_FILE = os.path.normpath(PERSISTENCE_FILE)
 
+PERSIST_FILE = os.path.join(os.path.dirname(__file__), '..', '..', 'persist.json')
+PERSIST_FILE = os.path.normpath(PERSIST_FILE)
+
 MAX_DATAPOINTS = 888
 
 
@@ -66,3 +69,45 @@ def clear_career_data():
     except Exception as e:
         log.info(f"Failed to clear career data: {e}")
         return False
+
+
+def load_persist():
+    try:
+        if not os.path.exists(PERSIST_FILE):
+            return {}
+        with open(PERSIST_FILE, 'r') as f:
+            return json.load(f)
+    except Exception:
+        return {}
+
+
+def save_persist(data):
+    try:
+        with open(PERSIST_FILE, 'w') as f:
+            json.dump(data, f)
+    except Exception:
+        pass
+
+
+def mark_buff_used(item_name):
+    data = load_persist()
+    used = set(data.get('used_buffs', []))
+    used.add(item_name)
+    data['used_buffs'] = list(used)
+    save_persist(data)
+
+
+def is_buff_used(item_name):
+    data = load_persist()
+    return item_name in data.get('used_buffs', [])
+
+
+def get_used_buffs():
+    data = load_persist()
+    return set(data.get('used_buffs', []))
+
+
+def clear_used_buffs():
+    data = load_persist()
+    data['used_buffs'] = []
+    save_persist(data)

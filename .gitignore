@@ -141,3 +141,4 @@ brayscript/
 scripts/
 testcase/
 career_data.json
+persist.json

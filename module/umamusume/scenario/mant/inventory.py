@@ -628,6 +628,22 @@ def use_training_item(ctx, item_name, quantity=1):
     return True
 
 
+INSTANT_USE_ITEMS = [
+    'Grilled Carrots',
+    'Yummy Cat Food',
+    'Pretty Mirror',
+    "Scholar's Hat",
+    "Reporter's Binoculars",
+    'Master Practice Guide',
+]
+
+ONE_TIME_BUFF_ITEMS = {
+    'Pretty Mirror',
+    "Scholar's Hat",
+    "Reporter's Binoculars",
+    'Master Practice Guide',
+}
+
 ENERGY_RECOVERY_ITEMS = {
     'Vita 20', 'Vita 40', 'Vita 65', 'Royal Kale Juice',
     'Energy Drink MAX', 'Energy Drink MAX EX',
@@ -759,6 +775,28 @@ def handle_energy_item(ctx):
     return use_item_and_update_inventory(ctx, item_name)
 
 
+def handle_instant_use_items(ctx):
+    from module.umamusume.persistence import mark_buff_used, is_buff_used
+    owned = getattr(ctx.cultivate_detail, 'mant_owned_items', [])
+    owned_map = {n: q for n, q in owned}
+    used_any = False
+    for item_name in INSTANT_USE_ITEMS:
+        qty = owned_map.get(item_name, 0)
+        if qty <= 0:
+            continue
+        if item_name in ONE_TIME_BUFF_ITEMS and is_buff_used(item_name):
+            continue
+        for _ in range(qty):
+            ok = use_item_and_update_inventory(ctx, item_name)
+            if not ok:
+                break
+            used_any = True
+            if item_name in ONE_TIME_BUFF_ITEMS:
+                mark_buff_used(item_name)
+                break
+    return used_any
+
+
 def handle_charm(ctx):
     mant_cfg = getattr(ctx.task.detail.scenario_config, 'mant_config', None)
     if mant_cfg is None:
@@ -841,12 +879,20 @@ def whistle_loop(ctx, start_date):
         rescan_training(ctx)
 
 
+def has_instant_use_items(ctx):
+    owned = getattr(ctx.cultivate_detail, 'mant_owned_items', [])
+    owned_map = {n: q for n, q in owned}
+    return any(owned_map.get(item, 0) > 0 for item in INSTANT_USE_ITEMS)
+
+
 def item_loop(ctx):
     start_date = getattr(ctx.cultivate_detail.turn_info, 'date', None)
     current_energy = getattr(ctx.cultivate_detail.turn_info, 'cached_energy', 0)
     if current_energy is None:
         current_energy = 0
     current_energy = int(current_energy)
+
+    handle_instant_use_items(ctx)
 
     got_recovery = has_energy_recovery(ctx)
     got_charm = has_charm(ctx)

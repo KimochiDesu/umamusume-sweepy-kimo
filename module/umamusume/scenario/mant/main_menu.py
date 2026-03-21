@@ -103,6 +103,11 @@ def handle_mant_shop_scan(ctx, current_date):
                         if cost <= budget:
                             targets.append(display)
                             budget -= cost
+        from module.umamusume.persistence import get_used_buffs
+        from module.umamusume.scenario.mant.inventory import ONE_TIME_BUFF_ITEMS
+        used_buffs = get_used_buffs()
+        targets = [t for t in targets if t not in ONE_TIME_BUFF_ITEMS or t not in used_buffs]
+
         active_ailments = getattr(ctx.cultivate_detail, 'mant_afflictions', [])
         cure_always_ok = {"Rich Hand Cream", AILMENT_CURE_ALL}
         needed_cures = set()
