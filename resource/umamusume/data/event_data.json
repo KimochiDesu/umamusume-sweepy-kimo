@@ -6848,7 +6848,7 @@
       }
     }
   },
-  "Bakushin Greeting Campaign!": {
+  "A Bakushin Greeting!": {
     "choices": {
       "1": "Choice 1",
       "2": "Choice 2"
@@ -27941,16 +27941,16 @@
       "1": {
         "Friendship": 0.0,
         "Guts": 0.0,
-        "HP": -10.0,
+        "HP": -5.0,
         "Max Energy": 0.0,
         "Mood": 0.0,
         "Power": 0.0,
         "Skill": 0.0,
         "Skill Hint": 0.0,
-        "Skill Pts": 15.0,
-        "Speed": 0.0,
-        "Stamina": 10.0,
-        "Wisdom": 0.0
+        "Skill Pts": 7.5,
+        "Speed": 5.0,
+        "Stamina": 5.0,
+        "Wisdom": 5.0
       },
       "2": {
         "Friendship": 0.0,
@@ -27958,7 +27958,7 @@
         "HP": 0.0,
         "Max Energy": 0.0,
         "Mood": 0.0,
-        "Power": 10.0,
+        "Power": 15.0,
         "Skill": 0.0,
         "Skill Hint": 0.0,
         "Skill Pts": 0.0,
@@ -35787,6 +35787,915 @@
         "Skill Hint": 0.0,
         "Skill Pts": 0.0,
         "Speed": 5.0,
+        "Stamina": 0.0,
+        "Wisdom": 0.0
+      }
+    }
+  },
+  "A Step Beyond Ordinary": {
+    "choices": {
+      "1": "Choice 1",
+      "2": "Choice 2"
+    },
+    "stats": {
+      "1": {
+        "Friendship": 0.0,
+        "Guts": 0.0,
+        "HP": 0.0,
+        "Max Energy": 0.0,
+        "Mood": 0.0,
+        "Power": 20.0,
+        "Skill": 0.0,
+        "Skill Hint": 0.0,
+        "Skill Pts": 0.0,
+        "Speed": 0.0,
+        "Stamina": 0.0,
+        "Wisdom": 0.0
+      },
+      "2": {
+        "Friendship": 0.0,
+        "Guts": 20.0,
+        "HP": 0.0,
+        "Max Energy": 0.0,
+        "Mood": 0.0,
+        "Power": 0.0,
+        "Skill": 0.0,
+        "Skill Hint": 0.0,
+        "Skill Pts": 0.0,
+        "Speed": 0.0,
+        "Stamina": 0.0,
+        "Wisdom": 0.0
+      }
+    }
+  },
+  "Machitan the Wedding Officiant": {
+    "choices": {
+      "1": "Choice 1",
+      "2": "Choice 2"
+    },
+    "stats": {
+      "1": {
+        "Friendship": 0.0,
+        "Guts": 0.0,
+        "HP": 0.0,
+        "Max Energy": 0.0,
+        "Mood": 0.0,
+        "Power": 0.0,
+        "Skill": 0.0,
+        "Skill Hint": 0.0,
+        "Skill Pts": 0.0,
+        "Speed": 0.0,
+        "Stamina": 0.0,
+        "Wisdom": 20.0
+      },
+      "2": {
+        "Friendship": 0.0,
+        "Guts": 0.0,
+        "HP": 0.0,
+        "Max Energy": 0.0,
+        "Mood": 0.0,
+        "Power": 0.0,
+        "Skill": 0.0,
+        "Skill Hint": 0.0,
+        "Skill Pts": 15.0,
+        "Speed": 0.0,
+        "Stamina": 10.0,
+        "Wisdom": 0.0
+      }
+    }
+  },
+  "Menu Makeover": {
+    "choices": {
+      "1": "Choice 1",
+      "2": "Choice 2"
+    },
+    "stats": {
+      "1": {
+        "Friendship": 0.0,
+        "Guts": 0.0,
+        "HP": 0.0,
+        "Max Energy": 0.0,
+        "Mood": 0.0,
+        "Power": 10.0,
+        "Skill": 0.0,
+        "Skill Hint": 0.0,
+        "Skill Pts": 0.0,
+        "Speed": 0.0,
+        "Stamina": 10.0,
+        "Wisdom": 0.0
+      },
+      "2": {
+        "Friendship": 0.0,
+        "Guts": 10.0,
+        "HP": 0.0,
+        "Max Energy": 0.0,
+        "Mood": 0.0,
+        "Power": 0.0,
+        "Skill": 0.0,
+        "Skill Hint": 0.0,
+        "Skill Pts": 0.0,
+        "Speed": 0.0,
+        "Stamina": 0.0,
+        "Wisdom": 10.0
+      }
+    }
+  },
+  "Love Tastes Like Grilled Mackerel": {
+    "choices": {
+      "1": "Choice 1",
+      "2": "Choice 2"
+    },
+    "stats": {
+      "1": {
+        "Friendship": 0.0,
+        "Guts": 0.0,
+        "HP": 0.0,
+        "Max Energy": 0.0,
+        "Mood": 0.0,
+        "Power": 0.0,
+        "Skill": 0.0,
+        "Skill Hint": 0.0,
+        "Skill Pts": 0.0,
+        "Speed": 0.0,
+        "Stamina": 10.0,
+        "Wisdom": 0.0
+      },
+      "2": {
+        "Friendship": 0.0,
+        "Guts": 0.0,
+        "HP": 0.0,
+        "Max Energy": 0.0,
+        "Mood": 1.0,
+        "Power": 0.0,
+        "Skill": 0.0,
+        "Skill Hint": 0.0,
+        "Skill Pts": 0.0,
+        "Speed": 5.0,
+        "Stamina": 0.0,
+        "Wisdom": 0.0
+      }
+    }
+  },
+  "A Swift Resolution!": {
+    "choices": {
+      "1": "Choice 1",
+      "2": "Choice 2"
+    },
+    "stats": {
+      "1": {
+        "Friendship": 0.0,
+        "Guts": 0.0,
+        "HP": 0.0,
+        "Max Energy": 0.0,
+        "Mood": 0.0,
+        "Power": 10.0,
+        "Skill": 0.0,
+        "Skill Hint": 0.0,
+        "Skill Pts": 0.0,
+        "Speed": 0.0,
+        "Stamina": 0.0,
+        "Wisdom": 0.0
+      },
+      "2": {
+        "Friendship": 0.0,
+        "Guts": 0.0,
+        "HP": 5.0,
+        "Max Energy": 0.0,
+        "Mood": 0.0,
+        "Power": 0.0,
+        "Skill": 0.0,
+        "Skill Hint": 0.0,
+        "Skill Pts": 15.0,
+        "Speed": 0.0,
+        "Stamina": 0.0,
+        "Wisdom": 0.0
+      }
+    }
+  },
+  "A Long-Awaited Lunch": {
+    "choices": {
+      "1": "Choice 1",
+      "2": "Choice 2"
+    },
+    "stats": {
+      "1": {
+        "Friendship": 0.0,
+        "Guts": 0.0,
+        "HP": 0.0,
+        "Max Energy": 0.0,
+        "Mood": 1.0,
+        "Power": 0.0,
+        "Skill": 0.0,
+        "Skill Hint": 0.0,
+        "Skill Pts": 0.0,
+        "Speed": 0.0,
+        "Stamina": 10.0,
+        "Wisdom": 0.0
+      },
+      "2": {
+        "Friendship": 0.0,
+        "Guts": 0.0,
+        "HP": 0.0,
+        "Max Energy": 0.0,
+        "Mood": 0.0,
+        "Power": 0.0,
+        "Skill": 1.0,
+        "Skill Hint": 0.0,
+        "Skill Pts": 0.0,
+        "Speed": 0.0,
+        "Stamina": 0.0,
+        "Wisdom": 0.0
+      }
+    }
+  },
+  "Jumbo Fried Party": {
+    "choices": {
+      "1": "Choice 1",
+      "2": "Choice 2"
+    },
+    "stats": {
+      "1": {
+        "Friendship": 0.0,
+        "Guts": 0.0,
+        "HP": 10.0,
+        "Max Energy": 0.0,
+        "Mood": 0.0,
+        "Power": 0.0,
+        "Skill": 0.0,
+        "Skill Hint": 0.0,
+        "Skill Pts": 5.0,
+        "Speed": 0.0,
+        "Stamina": 0.0,
+        "Wisdom": 0.0
+      },
+      "2": {
+        "Friendship": 0.0,
+        "Guts": 0.0,
+        "HP": 30.0,
+        "Max Energy": 0.0,
+        "Mood": 0.0,
+        "Power": 5.0,
+        "Skill": 0.0,
+        "Skill Hint": 0.0,
+        "Skill Pts": 10.0,
+        "Speed": -5.0,
+        "Stamina": 0.0,
+        "Wisdom": 0.0
+      }
+    }
+  },
+  "A Bubbly Partnership": {
+    "choices": {
+      "1": "Choice 1",
+      "2": "Choice 2"
+    },
+    "stats": {
+      "1": {
+        "Friendship": 0.0,
+        "Guts": 0.0,
+        "HP": 0.0,
+        "Max Energy": 0.0,
+        "Mood": 0.0,
+        "Power": 0.0,
+        "Skill": 0.0,
+        "Skill Hint": 0.0,
+        "Skill Pts": 0.0,
+        "Speed": 0.0,
+        "Stamina": 10.0,
+        "Wisdom": 0.0
+      },
+      "2": {
+        "Friendship": 0.0,
+        "Guts": 0.0,
+        "HP": 0.0,
+        "Max Energy": 0.0,
+        "Mood": 0.0,
+        "Power": 0.0,
+        "Skill": 0.0,
+        "Skill Hint": 0.0,
+        "Skill Pts": 0.0,
+        "Speed": 0.0,
+        "Stamina": 0.0,
+        "Wisdom": 10.0
+      }
+    }
+  },
+  "Hospitali-Don't": {
+    "choices": {
+      "1": "Choice 1",
+      "2": "Choice 2"
+    },
+    "stats": {
+      "1": {
+        "Friendship": 0.0,
+        "Guts": 10.0,
+        "HP": 0.0,
+        "Max Energy": 0.0,
+        "Mood": 0.0,
+        "Power": 0.0,
+        "Skill": 0.0,
+        "Skill Hint": 0.0,
+        "Skill Pts": 0.0,
+        "Speed": 0.0,
+        "Stamina": 0.0,
+        "Wisdom": 0.0
+      },
+      "2": {
+        "Friendship": 0.0,
+        "Guts": 0.0,
+        "HP": 0.0,
+        "Max Energy": 0.0,
+        "Mood": 0.0,
+        "Power": 0.0,
+        "Skill": 0.0,
+        "Skill Hint": 0.0,
+        "Skill Pts": 0.0,
+        "Speed": 0.0,
+        "Stamina": 10.0,
+        "Wisdom": 0.0
+      }
+    }
+  },
+  "Machitan Hospitality!": {
+    "choices": {
+      "1": "Choice 1",
+      "2": "Choice 2",
+      "3": "Choice 3"
+    },
+    "stats": {
+      "1": {
+        "Friendship": 0.0,
+        "Guts": 0.0,
+        "HP": 0.0,
+        "Max Energy": 0.0,
+        "Mood": 0.0,
+        "Power": 0.0,
+        "Skill": 0.0,
+        "Skill Hint": 0.0,
+        "Skill Pts": 0.0,
+        "Speed": 0.0,
+        "Stamina": 0.0,
+        "Wisdom": 10.0
+      },
+      "2": {
+        "Friendship": 0.0,
+        "Guts": 0.0,
+        "HP": 0.0,
+        "Max Energy": 0.0,
+        "Mood": 0.0,
+        "Power": 0.0,
+        "Skill": 0.0,
+        "Skill Hint": 0.0,
+        "Skill Pts": 0.0,
+        "Speed": 10.0,
+        "Stamina": 0.0,
+        "Wisdom": 0.0
+      },
+      "3": {
+        "Friendship": 0.0,
+        "Guts": 10.0,
+        "HP": 0.0,
+        "Max Energy": 0.0,
+        "Mood": 0.0,
+        "Power": 0.0,
+        "Skill": 0.0,
+        "Skill Hint": 0.0,
+        "Skill Pts": 0.0,
+        "Speed": 0.0,
+        "Stamina": 0.0,
+        "Wisdom": 0.0
+      }
+    }
+  },
+  "I'll Be a Dependable Big Sis!": {
+    "choices": {
+      "1": "Choice 1",
+      "2": "Choice 2"
+    },
+    "stats": {
+      "1": {
+        "Friendship": 0.0,
+        "Guts": 0.0,
+        "HP": 0.0,
+        "Max Energy": 0.0,
+        "Mood": 0.0,
+        "Power": 10.0,
+        "Skill": 0.0,
+        "Skill Hint": 0.0,
+        "Skill Pts": 0.0,
+        "Speed": 0.0,
+        "Stamina": 0.0,
+        "Wisdom": 0.0
+      },
+      "2": {
+        "Friendship": 0.0,
+        "Guts": 10.0,
+        "HP": 0.0,
+        "Max Energy": 0.0,
+        "Mood": 0.0,
+        "Power": 0.0,
+        "Skill": 0.0,
+        "Skill Hint": 0.0,
+        "Skill Pts": 0.0,
+        "Speed": 0.0,
+        "Stamina": 0.0,
+        "Wisdom": 0.0
+      }
+    }
+  },
+  "Machitan's First Hat": {
+    "choices": {
+      "1": "Choice 1",
+      "2": "Choice 2"
+    },
+    "stats": {
+      "1": {
+        "Friendship": 0.0,
+        "Guts": 0.0,
+        "HP": 0.0,
+        "Max Energy": 0.0,
+        "Mood": 0.0,
+        "Power": 0.0,
+        "Skill": 0.0,
+        "Skill Hint": 0.0,
+        "Skill Pts": 0.0,
+        "Speed": 0.0,
+        "Stamina": 5.0,
+        "Wisdom": 5.0
+      },
+      "2": {
+        "Friendship": 0.0,
+        "Guts": 0.0,
+        "HP": 0.0,
+        "Max Energy": 0.0,
+        "Mood": 0.0,
+        "Power": 0.0,
+        "Skill": 0.0,
+        "Skill Hint": 0.0,
+        "Skill Pts": 0.0,
+        "Speed": 10.0,
+        "Stamina": 0.0,
+        "Wisdom": 0.0
+      }
+    }
+  },
+  "Forget Me Not!": {
+    "choices": {
+      "1": "Choice 1",
+      "2": "Choice 2"
+    },
+    "stats": {
+      "1": {
+        "Friendship": 0.0,
+        "Guts": 0.0,
+        "HP": 0.0,
+        "Max Energy": 0.0,
+        "Mood": 0.0,
+        "Power": 0.0,
+        "Skill": 0.0,
+        "Skill Hint": 0.0,
+        "Skill Pts": 0.0,
+        "Speed": 0.0,
+        "Stamina": 20.0,
+        "Wisdom": 0.0
+      },
+      "2": {
+        "Friendship": 0.0,
+        "Guts": 0.0,
+        "HP": 0.0,
+        "Max Energy": 0.0,
+        "Mood": 0.0,
+        "Power": 0.0,
+        "Skill": 0.0,
+        "Skill Hint": 0.0,
+        "Skill Pts": 0.0,
+        "Speed": 20.0,
+        "Stamina": 0.0,
+        "Wisdom": 0.0
+      }
+    }
+  },
+  "A Talent for Cuteness!": {
+    "choices": {
+      "1": "Choice 1",
+      "2": "Choice 2"
+    },
+    "stats": {
+      "1": {
+        "Friendship": 0.0,
+        "Guts": 0.0,
+        "HP": 0.0,
+        "Max Energy": 0.0,
+        "Mood": 0.0,
+        "Power": 0.0,
+        "Skill": 0.0,
+        "Skill Hint": 0.0,
+        "Skill Pts": 0.0,
+        "Speed": 0.0,
+        "Stamina": 10.0,
+        "Wisdom": 10.0
+      },
+      "2": {
+        "Friendship": 0.0,
+        "Guts": 20.0,
+        "HP": 0.0,
+        "Max Energy": 0.0,
+        "Mood": 0.0,
+        "Power": 0.0,
+        "Skill": 0.0,
+        "Skill Hint": 0.0,
+        "Skill Pts": 0.0,
+        "Speed": 0.0,
+        "Stamina": 0.0,
+        "Wisdom": 0.0
+      }
+    }
+  },
+  "Kitasan and the Witch": {
+    "choices": {
+      "1": "Choice 1",
+      "2": "Choice 2"
+    },
+    "stats": {
+      "1": {
+        "Friendship": 0.0,
+        "Guts": 0.0,
+        "HP": 0.0,
+        "Max Energy": 0.0,
+        "Mood": 0.0,
+        "Power": 0.0,
+        "Skill": 0.0,
+        "Skill Hint": 0.0,
+        "Skill Pts": 0.0,
+        "Speed": 0.0,
+        "Stamina": 10.0,
+        "Wisdom": 0.0
+      },
+      "2": {
+        "Friendship": 0.0,
+        "Guts": 0.0,
+        "HP": 0.0,
+        "Max Energy": 0.0,
+        "Mood": 1.0,
+        "Power": 0.0,
+        "Skill": 0.0,
+        "Skill Hint": 0.0,
+        "Skill Pts": 0.0,
+        "Speed": 5.0,
+        "Stamina": 0.0,
+        "Wisdom": 0.0
+      }
+    }
+  },
+  "My Dependable Upperclassman!": {
+    "choices": {
+      "1": "Choice 1",
+      "2": "Choice 2"
+    },
+    "stats": {
+      "1": {
+        "Friendship": 0.0,
+        "Guts": 0.0,
+        "HP": 0.0,
+        "Max Energy": 0.0,
+        "Mood": 0.0,
+        "Power": 0.0,
+        "Skill": 0.0,
+        "Skill Hint": 0.0,
+        "Skill Pts": 0.0,
+        "Speed": 10.0,
+        "Stamina": 0.0,
+        "Wisdom": 0.0
+      },
+      "2": {
+        "Friendship": 0.0,
+        "Guts": 0.0,
+        "HP": 10.0,
+        "Max Energy": 0.0,
+        "Mood": 0.0,
+        "Power": 0.0,
+        "Skill": 0.0,
+        "Skill Hint": 0.0,
+        "Skill Pts": 0.0,
+        "Speed": 0.0,
+        "Stamina": 0.0,
+        "Wisdom": 0.0
+      }
+    }
+  },
+  "A Prime Time Cameo": {
+    "choices": {
+      "1": "Choice 1",
+      "2": "Choice 2"
+    },
+    "stats": {
+      "1": {
+        "Friendship": 0.0,
+        "Guts": 10.0,
+        "HP": 0.0,
+        "Max Energy": 0.0,
+        "Mood": 0.0,
+        "Power": 0.0,
+        "Skill": 0.0,
+        "Skill Hint": 0.0,
+        "Skill Pts": 0.0,
+        "Speed": 5.0,
+        "Stamina": 0.0,
+        "Wisdom": 0.0
+      },
+      "2": {
+        "Friendship": 0.0,
+        "Guts": 0.0,
+        "HP": 0.0,
+        "Max Energy": 0.0,
+        "Mood": 0.0,
+        "Power": 0.0,
+        "Skill": 1.0,
+        "Skill Hint": 0.0,
+        "Skill Pts": 0.0,
+        "Speed": 0.0,
+        "Stamina": 0.0,
+        "Wisdom": 0.0
+      }
+    }
+  },
+  "Kitasan the Traveling Masseuse!": {
+    "choices": {
+      "1": "Choice 1",
+      "2": "Choice 2",
+      "3": "Choice 3"
+    },
+    "stats": {
+      "1": {
+        "Friendship": 0.0,
+        "Guts": 0.0,
+        "HP": 0.0,
+        "Max Energy": 0.0,
+        "Mood": 0.0,
+        "Power": 0.0,
+        "Skill": 0.0,
+        "Skill Hint": 0.0,
+        "Skill Pts": 0.0,
+        "Speed": 20.0,
+        "Stamina": 0.0,
+        "Wisdom": 0.0
+      },
+      "2": {
+        "Friendship": 0.0,
+        "Guts": 10.0,
+        "HP": 10.0,
+        "Max Energy": 0.0,
+        "Mood": 0.0,
+        "Power": 0.0,
+        "Skill": 0.0,
+        "Skill Hint": 0.0,
+        "Skill Pts": 0.0,
+        "Speed": 0.0,
+        "Stamina": 0.0,
+        "Wisdom": 0.0
+      },
+      "3": {
+        "Friendship": 0.0,
+        "Guts": 0.0,
+        "HP": 0.0,
+        "Max Energy": 0.0,
+        "Mood": 0.0,
+        "Power": 0.0,
+        "Skill": 2.0,
+        "Skill Hint": 0.0,
+        "Skill Pts": 0.0,
+        "Speed": 0.0,
+        "Stamina": 0.0,
+        "Wisdom": 0.0
+      }
+    }
+  },
+  "Eat up the Festival!": {
+    "choices": {
+      "1": "Choice 1",
+      "2": "Choice 2"
+    },
+    "stats": {
+      "1": {
+        "Friendship": 0.0,
+        "Guts": 0.0,
+        "HP": 10.0,
+        "Max Energy": 0.0,
+        "Mood": 0.0,
+        "Power": 0.0,
+        "Skill": 0.0,
+        "Skill Hint": 0.0,
+        "Skill Pts": 5.0,
+        "Speed": 0.0,
+        "Stamina": 0.0,
+        "Wisdom": 0.0
+      },
+      "2": {
+        "Friendship": 0.0,
+        "Guts": 0.0,
+        "HP": 30.0,
+        "Max Energy": 0.0,
+        "Mood": 0.0,
+        "Power": 5.0,
+        "Skill": 0.0,
+        "Skill Hint": 0.0,
+        "Skill Pts": 10.0,
+        "Speed": -5.0,
+        "Stamina": 0.0,
+        "Wisdom": 0.0
+      }
+    }
+  },
+  "Come, One and All!": {
+    "choices": {
+      "1": "Choice 1",
+      "2": "Choice 2"
+    },
+    "stats": {
+      "1": {
+        "Friendship": 0.0,
+        "Guts": 0.0,
+        "HP": 0.0,
+        "Max Energy": 0.0,
+        "Mood": 0.0,
+        "Power": 0.0,
+        "Skill": 0.0,
+        "Skill Hint": 0.0,
+        "Skill Pts": 0.0,
+        "Speed": 0.0,
+        "Stamina": 10.0,
+        "Wisdom": 0.0
+      },
+      "2": {
+        "Friendship": 0.0,
+        "Guts": 0.0,
+        "HP": 0.0,
+        "Max Energy": 0.0,
+        "Mood": 0.0,
+        "Power": 0.0,
+        "Skill": 0.0,
+        "Skill Hint": 0.0,
+        "Skill Pts": 0.0,
+        "Speed": 0.0,
+        "Stamina": 0.0,
+        "Wisdom": 10.0
+      }
+    }
+  },
+  "I’m Not Afraid of Any Ghosts!": {
+    "choices": {
+      "1": "Choice 1",
+      "2": "Choice 2"
+    },
+    "stats": {
+      "1": {
+        "Friendship": 0.0,
+        "Guts": 0.0,
+        "HP": 0.0,
+        "Max Energy": 0.0,
+        "Mood": 0.0,
+        "Power": 0.0,
+        "Skill": 0.0,
+        "Skill Hint": 0.0,
+        "Skill Pts": 0.0,
+        "Speed": 5.0,
+        "Stamina": 5.0,
+        "Wisdom": 0.0
+      },
+      "2": {
+        "Friendship": 0.0,
+        "Guts": 10.0,
+        "HP": 0.0,
+        "Max Energy": 0.0,
+        "Mood": 0.0,
+        "Power": 0.0,
+        "Skill": 0.0,
+        "Skill Hint": 0.0,
+        "Skill Pts": 0.0,
+        "Speed": 0.0,
+        "Stamina": 0.0,
+        "Wisdom": 0.0
+      }
+    }
+  },
+  "The Star of the Show, the Heart of the Festival!": {
+    "choices": {
+      "1": "Choice 1",
+      "2": "Choice 2",
+      "3": "Choice 3"
+    },
+    "stats": {
+      "1": {
+        "Friendship": 0.0,
+        "Guts": 0.0,
+        "HP": 0.0,
+        "Max Energy": 0.0,
+        "Mood": 0.0,
+        "Power": 0.0,
+        "Skill": 0.0,
+        "Skill Hint": 0.0,
+        "Skill Pts": 0.0,
+        "Speed": 0.0,
+        "Stamina": 0.0,
+        "Wisdom": 10.0
+      },
+      "2": {
+        "Friendship": 0.0,
+        "Guts": 0.0,
+        "HP": 0.0,
+        "Max Energy": 0.0,
+        "Mood": 0.0,
+        "Power": 10.0,
+        "Skill": 0.0,
+        "Skill Hint": 0.0,
+        "Skill Pts": 0.0,
+        "Speed": 0.0,
+        "Stamina": 0.0,
+        "Wisdom": 0.0
+      },
+      "3": {
+        "Friendship": 0.0,
+        "Guts": 0.0,
+        "HP": 0.0,
+        "Max Energy": 0.0,
+        "Mood": 0.0,
+        "Power": 0.0,
+        "Skill": 0.0,
+        "Skill Hint": 0.0,
+        "Skill Pts": 0.0,
+        "Speed": 10.0,
+        "Stamina": 0.0,
+        "Wisdom": 0.0
+      }
+    }
+  },
+  "Toffee-Tinted Memories": {
+    "choices": {
+      "1": "Choice 1",
+      "2": "Choice 2"
+    },
+    "stats": {
+      "1": {
+        "Friendship": 0.0,
+        "Guts": 0.0,
+        "HP": 0.0,
+        "Max Energy": 0.0,
+        "Mood": 0.0,
+        "Power": 0.0,
+        "Skill": 0.0,
+        "Skill Hint": 0.0,
+        "Skill Pts": 0.0,
+        "Speed": 0.0,
+        "Stamina": 10.0,
+        "Wisdom": 0.0
+      },
+      "2": {
+        "Friendship": 0.0,
+        "Guts": 5.0,
+        "HP": 0.0,
+        "Max Energy": 0.0,
+        "Mood": 0.0,
+        "Power": 0.0,
+        "Skill": 0.0,
+        "Skill Hint": 0.0,
+        "Skill Pts": 0.0,
+        "Speed": 0.0,
+        "Stamina": 0.0,
+        "Wisdom": 5.0
+      }
+    }
+  },
+  "A Voice Like None Other": {
+    "choices": {
+      "1": "Choice 1",
+      "2": "Choice 2"
+    },
+    "stats": {
+      "1": {
+        "Friendship": 0.0,
+        "Guts": 0.0,
+        "HP": 0.0,
+        "Max Energy": 0.0,
+        "Mood": 0.0,
+        "Power": 0.0,
+        "Skill": 0.0,
+        "Skill Hint": 0.0,
+        "Skill Pts": 0.0,
+        "Speed": 0.0,
+        "Stamina": 0.0,
+        "Wisdom": 10.0
+      },
+      "2": {
+        "Friendship": 0.0,
+        "Guts": 0.0,
+        "HP": 0.0,
+        "Max Energy": 0.0,
+        "Mood": 0.0,
+        "Power": 10.0,
+        "Skill": 0.0,
+        "Skill Hint": 0.0,
+        "Skill Pts": 0.0,
+        "Speed": 0.0,
         "Stamina": 0.0,
         "Wisdom": 0.0
       }
