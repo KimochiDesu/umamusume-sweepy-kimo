@@ -719,6 +719,7 @@ def use_item_and_update_inventory(ctx, item_name):
     if not ok:
         log.info(f'[ITEM USE ATTEMPT FAILED] {item_name} not found in inventory')
         return False
+    close_items_panel(ctx)
     owned = getattr(ctx.cultivate_detail, 'mant_owned_items', [])
     owned_map = {n: q for n, q in owned}
     owned_map[item_name] = max(0, owned_map.get(item_name, 0) - 1)
