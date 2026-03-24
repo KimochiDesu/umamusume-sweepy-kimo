@@ -5,7 +5,7 @@ my main which runs this is still fine tho, 99% chance it got mass reported inste
 
 I stand by what I said, if you don't get mass reported you'll be fine. 
 
-Reminder to edit the start/end time and don't run this 24/7. Simple as.
+Reminder to edit the start/end time and don't run this 24/7 (personally I do 18 hours a day). 
 
 # Sweepy — /vg/'s Uma Musume Bot (UAT REHASHED)
 
