@@ -1,11 +1,12 @@
 import bot.base.log as logger
-from module.umamusume.context import detected_portraits_log
-from module.umamusume.persistence import set_ignore_cat_food, set_ignore_grilled_carrots
 
 log = logger.get_logger(__name__)
 
 
 def mant_after_hook(ctx, img):
+    from module.umamusume.context import detected_portraits_log
+    from module.umamusume.persistence import set_ignore_cat_food, set_ignore_grilled_carrots
+
     favor = detected_portraits_log.get("President Akikawa", {}).get("favor", 0)
     if favor >= 3:
         set_ignore_cat_food(True)
