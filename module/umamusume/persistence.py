@@ -171,3 +171,24 @@ def clear_ignore_grilled_carrots():
     if 'ignore_grilled_carrots' in data:
         del data['ignore_grilled_carrots']
     save_persist(data)
+
+
+def save_megaphone_state(tier, turns):
+    data = load_persist()
+    data['megaphone_tier'] = tier
+    data['megaphone_turns'] = turns
+    save_persist(data)
+
+
+def load_megaphone_state():
+    data = load_persist()
+    tier = data.get('megaphone_tier', 0)
+    turns = data.get('megaphone_turns', 0)
+    return tier, turns
+
+
+def clear_megaphone_state():
+    data = load_persist()
+    data.pop('megaphone_tier', None)
+    data.pop('megaphone_turns', None)
+    save_persist(data)

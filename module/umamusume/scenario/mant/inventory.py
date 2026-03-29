@@ -1167,6 +1167,8 @@ def handle_megaphone_endgame(ctx):
             ctx.cultivate_detail.mant_megaphone_tier = tier
             ctx.cultivate_detail.mant_megaphone_turns = duration
             log.info(f"endgame megaphone dump: tier {tier} for {duration} turns")
+            from module.umamusume.persistence import save_megaphone_state
+            save_megaphone_state(tier, duration)
         return ok
 
     return False
@@ -1250,6 +1252,8 @@ def handle_megaphone(ctx):
         ctx.cultivate_detail.mant_megaphone_tier = best_tier
         ctx.cultivate_detail.mant_megaphone_turns = duration
         log.info(f"megaphone active: tier {best_tier} for {duration} turns")
+        from module.umamusume.persistence import save_megaphone_state
+        save_megaphone_state(best_tier, duration)
     return ok
 
 
@@ -1293,6 +1297,8 @@ def tick_megaphone(ctx):
         ctx.cultivate_detail.mant_megaphone_turns = active_turns
         if active_turns <= 0:
             ctx.cultivate_detail.mant_megaphone_tier = 0
+        from module.umamusume.persistence import save_megaphone_state
+        save_megaphone_state(getattr(ctx.cultivate_detail, 'mant_megaphone_tier', 0), active_turns)
 
 
 def item_loop(ctx):

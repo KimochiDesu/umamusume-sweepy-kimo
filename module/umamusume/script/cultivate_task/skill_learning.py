@@ -192,8 +192,9 @@ def script_cultivate_finish(ctx: UmamusumeContext):
     import bot.conn.u2_ctrl as u2c
     u2c.IN_CAREER_RUN = False
     try:
-        from module.umamusume.persistence import clear_used_buffs
+        from module.umamusume.persistence import clear_used_buffs, clear_megaphone_state
         clear_used_buffs()
+        clear_megaphone_state()
     except Exception:
         pass
     if not ctx.task.detail.manual_purchase_at_end:

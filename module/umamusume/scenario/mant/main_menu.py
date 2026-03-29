@@ -4,6 +4,7 @@ import re
 from bot.recog.image_matcher import image_match
 from bot.recog.ocr import ocr_line
 from module.umamusume.asset.template import REF_MANT_ON_SALE
+from module.umamusume.define import TurnOperationType
 import bot.base.log as logger
 
 log = logger.get_logger(__name__)
@@ -216,7 +217,13 @@ def handle_mant_shop_scan(ctx, current_date):
             bought, held_items = buy_shop_items(ctx, targets, items_list, ratio, drag_ratio, first_item_gy)
             if bought:
                 ctx.cultivate_detail.mant_inventory_rescan_pending = True
+                total_spent = sum(SHOP_ITEM_COSTS.get(t, 0) for t in targets)
+                ctx.cultivate_detail.mant_coins = max(0, ctx.cultivate_detail.mant_coins - total_spent)
                 bought_set = set(targets)
+                ctx.cultivate_detail.mant_shop_items = [
+                    (name, conf, gy, turns, purchased or (name in bought_set))
+                    for name, conf, gy, turns, purchased in items_list
+                ]
                 remaining = [(name, turns, False) for name, _, _, turns, purchased in items_list
                              if not purchased and name not in bought_set]
                 log_detected_shop_items(remaining)
@@ -228,6 +235,236 @@ def handle_mant_shop_scan(ctx, current_date):
         t.sleep(1)
 
     ctx.cultivate_detail.turn_info.parse_main_menu_finish = False
+    return True
+
+
+def handle_mant_emergency_shop_buys(ctx, current_date):
+    if getattr(ctx.cultivate_detail.turn_info, 'mant_emergency_shop_done', False):
+        return False
+
+    from module.umamusume.scenario.mant.shop import (
+        is_shop_scan_turn, scan_mant_shop, buy_shop_items,
+        SHOP_ITEM_COSTS, SLUG_TO_DISPLAY, display_to_slug,
+        BACK_BTN_X, BACK_BTN_Y,
+    )
+    from module.umamusume.scenario.mant.constants import AILMENT_CURE_MAP, AILMENT_CURE_ALL
+    import time as _t
+
+    if not is_shop_scan_turn(current_date):
+        return False
+
+    shop_items = getattr(ctx.cultivate_detail, 'mant_shop_items', [])
+    if not shop_items:
+        return False
+
+    budget = ctx.cultivate_detail.mant_coins
+    emergency_targets = []
+
+    mant_cfg = getattr(ctx.task.detail.scenario_config, 'mant_config', None)
+    if mant_cfg and mant_cfg.item_tiers:
+        expiring = {name for name, _, _, turns, purchased in shop_items
+                    if turns == 1 and not purchased}
+        if expiring:
+            shop_slugs = {display_to_slug(n) for n, _, _, _, purchased in shop_items
+                          if not purchased}
+            tmp_budget = budget
+            for tier in range(1, mant_cfg.tier_count + 1):
+                if tier > 1:
+                    threshold = mant_cfg.tier_thresholds.get(tier, 0)
+                    if tmp_budget < threshold:
+                        continue
+                for slug, t in mant_cfg.item_tiers.items():
+                    if t != tier or slug not in shop_slugs:
+                        continue
+                    display = SLUG_TO_DISPLAY.get(slug)
+                    if display and display in expiring:
+                        cost = SHOP_ITEM_COSTS.get(display, 9999)
+                        if cost <= tmp_budget:
+                            emergency_targets.append(display)
+                            tmp_budget -= cost
+                            budget = tmp_budget
+
+    active_ailments = getattr(ctx.cultivate_detail, 'mant_afflictions', [])
+    if active_ailments:
+        owned = getattr(ctx.cultivate_detail, 'mant_owned_items', [])
+        owned_map = {n: q for n, q in owned}
+        shop_available = {name for name, _, _, _, purchased in shop_items if not purchased}
+
+        if not owned_map.get(AILMENT_CURE_ALL, 0):
+            any_uncovered = False
+            for ailment in active_ailments:
+                covered = False
+                for ailment_name, cure_name in AILMENT_CURE_MAP.items():
+                    if ailment_name.lower() not in ailment.lower():
+                        continue
+                    if owned_map.get(cure_name, 0) > 0 or cure_name in emergency_targets:
+                        covered = True
+                        break
+                    if cure_name in shop_available:
+                        cost = SHOP_ITEM_COSTS.get(cure_name, 9999)
+                        if cost <= budget:
+                            emergency_targets.append(cure_name)
+                            budget -= cost
+                            covered = True
+                    break
+                if not covered:
+                    any_uncovered = True
+
+            if (any_uncovered
+                    and AILMENT_CURE_ALL in shop_available
+                    and AILMENT_CURE_ALL not in emergency_targets):
+                cost = SHOP_ITEM_COSTS.get(AILMENT_CURE_ALL, 9999)
+                if cost <= budget:
+                    emergency_targets.append(AILMENT_CURE_ALL)
+                    budget -= cost
+
+    if not emergency_targets:
+        return False
+
+    scan_result = scan_mant_shop(ctx)
+    if scan_result is None:
+        ctx.ctrl.trigger_decision_reset = True
+        return True
+
+    ctx.cultivate_detail.turn_info.mant_emergency_shop_done = True
+    items_list, ratio, drag_ratio, first_item_gy = scan_result
+    ctx.cultivate_detail.mant_shop_items = items_list
+
+    fresh_available = {name for name, _, _, _, purchased in items_list if not purchased}
+    final_targets = [tgt for tgt in emergency_targets if tgt in fresh_available]
+
+    if not final_targets:
+        ctx.ctrl.click(BACK_BTN_X, BACK_BTN_Y)
+        _t.sleep(1)
+        return True
+
+    bought, _ = buy_shop_items(ctx, final_targets, items_list, ratio, drag_ratio, first_item_gy)
+    if bought:
+        ctx.cultivate_detail.mant_inventory_rescan_pending = True
+        spent = sum(SHOP_ITEM_COSTS.get(tgt, 0) for tgt in final_targets)
+        ctx.cultivate_detail.mant_coins = max(0, ctx.cultivate_detail.mant_coins - spent)
+        bought_set = set(final_targets)
+        ctx.cultivate_detail.mant_shop_items = [
+            (name, conf, gy, turns, purchased or (name in bought_set))
+            for name, conf, gy, turns, purchased in items_list
+        ]
+        from module.umamusume.context import log_detected_shop_items
+        remaining = [(name, turns, purchased)
+                     for name, _, _, turns, purchased in items_list
+                     if not purchased and name not in bought_set]
+        log_detected_shop_items(remaining)
+    else:
+        ctx.ctrl.click(BACK_BTN_X, BACK_BTN_Y)
+        _t.sleep(1)
+
+    return True
+
+
+def _would_cleat_be_used(cleat_name, race_id, current_date, owned_map):
+    from module.umamusume.scenario.mant.inventory import MANT_CLIMAX_RACE_TURNS, remaining_climax_races
+    from module.umamusume.asset.race_data import is_g1_race
+
+    sim = dict(owned_map)
+    sim[cleat_name] = sim.get(cleat_name, 0) + 1
+
+    master_qty = sim.get('Master Cleat Hammer', 0)
+    artisan_qty = sim.get('Artisan Cleat Hammer', 0)
+    is_climax_race = current_date in MANT_CLIMAX_RACE_TURNS
+
+    if is_climax_race:
+        if cleat_name == 'Master Cleat Hammer':
+            return master_qty > 0
+        return artisan_qty > 0 and master_qty == 0
+
+    races_left = remaining_climax_races(current_date)
+    master_reserve = min(races_left, master_qty)
+    artisan_reserve = max(0, races_left - master_reserve)
+    master_spare = master_qty - master_reserve
+    artisan_spare = artisan_qty - artisan_reserve
+
+    if is_g1_race(race_id):
+        return master_spare > 0 or artisan_spare > 0
+    else:
+        return artisan_spare > 0
+
+
+def handle_mant_cleat_shop_buy(ctx, current_date):
+    if getattr(ctx.cultivate_detail.turn_info, 'mant_cleat_shop_done', False):
+        return False
+
+    turn_op = getattr(ctx.cultivate_detail.turn_info, 'turn_operation', None)
+    if turn_op is None:
+        return False
+    if turn_op.turn_operation_type != TurnOperationType.TURN_OPERATION_TYPE_RACE:
+        return False
+
+    owned = getattr(ctx.cultivate_detail, 'mant_owned_items', [])
+    owned_map = {n: q for n, q in owned}
+    if owned_map.get('Master Cleat Hammer', 0) > 0 or owned_map.get('Artisan Cleat Hammer', 0) > 0:
+        return False
+
+    shop_items = getattr(ctx.cultivate_detail, 'mant_shop_items', [])
+    if not shop_items:
+        return False
+
+    shop_available = {name for name, _, _, _, purchased in shop_items if not purchased}
+    race_id = turn_op.race_id
+    budget = ctx.cultivate_detail.mant_coins
+
+    from module.umamusume.scenario.mant.shop import SHOP_ITEM_COSTS, scan_mant_shop, buy_shop_items, BACK_BTN_X, BACK_BTN_Y
+    import time as _t
+
+    cleat_to_buy = None
+    for candidate in ('Master Cleat Hammer', 'Artisan Cleat Hammer'):
+        if candidate not in shop_available:
+            continue
+        cost = SHOP_ITEM_COSTS.get(candidate, 9999)
+        if cost > budget:
+            continue
+        if _would_cleat_be_used(candidate, race_id, current_date, owned_map):
+            cleat_to_buy = candidate
+            break
+
+    if cleat_to_buy is None:
+        return False
+
+    cost = SHOP_ITEM_COSTS.get(cleat_to_buy, 0)
+
+    scan_result = scan_mant_shop(ctx)
+    if scan_result is None:
+        ctx.ctrl.trigger_decision_reset = True
+        return True
+
+    ctx.cultivate_detail.turn_info.mant_cleat_shop_done = True
+    items_list, ratio, drag_ratio, first_item_gy = scan_result
+    ctx.cultivate_detail.mant_shop_items = items_list
+
+    fresh_available = {name for name, _, _, _, purchased in items_list if not purchased}
+    if cleat_to_buy not in fresh_available:
+        ctx.ctrl.click(BACK_BTN_X, BACK_BTN_Y)
+        _t.sleep(1)
+        return True
+
+    bought, _ = buy_shop_items(ctx, [cleat_to_buy], items_list, ratio, drag_ratio, first_item_gy)
+    if bought:
+        ctx.cultivate_detail.mant_inventory_rescan_pending = True
+        ctx.cultivate_detail.mant_coins = max(0, ctx.cultivate_detail.mant_coins - cost)
+        owned_map[cleat_to_buy] = owned_map.get(cleat_to_buy, 0) + 1
+        ctx.cultivate_detail.mant_owned_items = list(owned_map.items())
+        bought_set = {cleat_to_buy}
+        ctx.cultivate_detail.mant_shop_items = [
+            (name, conf, gy, turns, purchased or (name in bought_set))
+            for name, conf, gy, turns, purchased in items_list
+        ]
+        from module.umamusume.context import log_detected_shop_items
+        remaining = [(name, turns, purchased)
+                     for name, _, _, turns, purchased in items_list
+                     if not purchased and name != cleat_to_buy]
+        log_detected_shop_items(remaining)
+    else:
+        ctx.ctrl.click(BACK_BTN_X, BACK_BTN_Y)
+        _t.sleep(1)
+
     return True
 
 
@@ -266,9 +503,15 @@ def handle_mant_main_menu(ctx, img, current_date):
     if handle_mant_shop_scan(ctx, current_date):
         return True
 
+    if handle_mant_emergency_shop_buys(ctx, current_date):
+        return True
+
     handle_mant_on_sale(img)
 
     if handle_mant_afflictions(ctx, img):
+        return True
+
+    if handle_mant_cleat_shop_buy(ctx, current_date):
         return True
 
     return False

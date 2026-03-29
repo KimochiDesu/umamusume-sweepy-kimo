@@ -287,4 +287,16 @@ def build_context(task: UmamusumeTask, ctrl) -> UmamusumeContext:
             detail.event_overrides = {}
         
         ctx.cultivate_detail = detail
+
+        try:
+            from module.umamusume.persistence import load_megaphone_state
+            mega_tier, mega_turns = load_megaphone_state()
+            detail.mant_megaphone_tier = mega_tier
+            detail.mant_megaphone_turns = mega_turns
+            if mega_tier > 0 and mega_turns > 0:
+                log.info("Restored megaphone state")
+        except Exception:
+            detail.mant_megaphone_tier = 0
+            detail.mant_megaphone_turns = 0
+
     return ctx
