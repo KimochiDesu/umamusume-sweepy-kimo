@@ -199,6 +199,10 @@ def handle_mant_shop_scan(ctx, current_date):
             bought, held_items = buy_shop_items(ctx, targets, items_list, ratio, drag_ratio, first_item_gy)
             if bought:
                 ctx.cultivate_detail.mant_inventory_rescan_pending = True
+                bought_set = set(targets)
+                remaining = [(name, turns, False) for name, _, _, turns, purchased in items_list
+                             if not purchased and name not in bought_set]
+                log_detected_shop_items(remaining)
 
     if not bought:
         from module.umamusume.scenario.mant.shop import BACK_BTN_X, BACK_BTN_Y

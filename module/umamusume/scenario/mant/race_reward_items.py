@@ -225,5 +225,8 @@ def check_and_detect_race_reward_items(img, img_gray):
 
         items = detect_race_reward_items(img)
         log.info("Race reward new shop items: %s", items)
+        if items:
+            from module.umamusume.context import add_detected_shop_items
+            add_detected_shop_items(items, turns=3)
     except Exception:
         pass

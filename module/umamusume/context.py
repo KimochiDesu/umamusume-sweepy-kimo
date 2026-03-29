@@ -77,11 +77,22 @@ def clear_detected_items():
 def log_detected_shop_items(items):
     detected_shop_items_log.clear()
     for name, turns, purchased in items:
+        if purchased:
+            continue
         detected_shop_items_log[name] = {
             "name": name,
             "turns": turns,
             "purchased": purchased,
         }
+
+def add_detected_shop_items(names, turns):
+    for name in names:
+        if name not in detected_shop_items_log:
+            detected_shop_items_log[name] = {
+                "name": name,
+                "turns": turns,
+                "purchased": False,
+            }
 
 def clear_detected_shop_items():
     detected_shop_items_log.clear()
