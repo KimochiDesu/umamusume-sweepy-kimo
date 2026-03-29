@@ -406,16 +406,28 @@ def scan_mant_shop(ctx):
 
     current_date = getattr(ctx.cultivate_detail.turn_info, 'date', 0)
     shop_x = SHOP_OPEN_X_SUMMER if is_summer_camp_period(current_date) else SHOP_OPEN_X
-    ctx.ctrl.click(shop_x, SHOP_OPEN_Y, "MANT shop open")
-    time.sleep(1.5)
 
-    scroll_to_top(ctx)
-    img = ctx.ctrl.get_screen()
-    img_rgb = cv2.cvtColor(img, cv2.COLOR_BGR2RGB)
-    thumb = find_thumb(img_rgb)
+    thumb = None
+    img = None
+    for attempt in range(3):
+        ctx.ctrl.click(shop_x, SHOP_OPEN_Y, "MANT shop open")
+        time.sleep(1.5)
+
+        scroll_to_top(ctx)
+        img = ctx.ctrl.get_screen()
+        img_rgb = cv2.cvtColor(img, cv2.COLOR_BGR2RGB)
+        thumb = find_thumb(img_rgb)
+        if thumb is not None:
+            break
+        results, _ = classify_items_in_frame(img)
+        if len(results) >= 2:
+            break
+        time.sleep(0.5)
 
     if thumb is None:
         results, _ = classify_items_in_frame(img)
+        if not results:
+            return None
         items_list = [(key, conf, abs_y, turns, bought) for key, conf, abs_y, turns, bought in results]
         return items_list, 14.0, 1.1, items_list[0][2] if items_list else 0
 
