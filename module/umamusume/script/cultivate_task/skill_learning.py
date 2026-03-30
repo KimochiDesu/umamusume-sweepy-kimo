@@ -435,7 +435,7 @@ def script_cultivate_learn_skill(ctx: UmamusumeContext):
                     early_exit = True
                     break
 
-                time.sleep(0.06)
+                time.sleep(0.068)
                 curr = ctx.ctrl.get_screen()
                 if curr is not None and not content_same(prev_frame, curr):
                     curr_rgb = cv2.cvtColor(curr, cv2.COLOR_BGR2RGB)

@@ -480,6 +480,7 @@ def scan_mant_shop(ctx):
 
     first_results, _ = classify_items_in_frame(img)
     all_detections = []
+    max_kept_frames = 6
     captured_frames = {0: img.copy()}
     for key, conf, abs_y, turns, bought in first_results:
         all_detections.append((key, conf, 0, abs_y, turns, bought))
@@ -500,10 +501,13 @@ def scan_mant_shop(ctx):
         futures = []
 
         while ctx.task.running() and time.time() < scan_deadline:
-            time.sleep(0.06)
+            time.sleep(0.068)
             curr = ctx.ctrl.get_screen()
             if curr is not None and not content_same(prev_frame, curr):
                 captured_frames[frame_idx] = curr.copy()
+                if len(captured_frames) > max_kept_frames:
+                    oldest = min(captured_frames)
+                    del captured_frames[oldest]
                 f = pool.submit(classify_items_in_frame, curr)
                 futures.append((frame_idx, f))
                 prev_frame = curr
@@ -520,6 +524,9 @@ def scan_mant_shop(ctx):
         final = ctx.ctrl.get_screen()
         if final is not None and not content_same(prev_frame, final):
             captured_frames[frame_idx] = final.copy()
+            if len(captured_frames) > max_kept_frames:
+                oldest = min(captured_frames)
+                del captured_frames[oldest]
             f = pool.submit(classify_items_in_frame, final)
             futures.append((frame_idx, f))
 
@@ -537,6 +544,9 @@ def scan_mant_shop(ctx):
         if at_bottom(extra_rgb):
             if not content_same(prev_frame, extra_img):
                 captured_frames[frame_idx] = extra_img.copy()
+                if len(captured_frames) > max_kept_frames:
+                    oldest = min(captured_frames)
+                    del captured_frames[oldest]
                 hits, _ = classify_items_in_frame(extra_img)
                 for key, conf, abs_y, turns, bought in hits:
                     all_detections.append((key, conf, frame_idx, abs_y, turns, bought))
@@ -555,6 +565,9 @@ def scan_mant_shop(ctx):
         after_extra = ctx.ctrl.get_screen()
         if after_extra is not None and not content_same(prev_frame, after_extra):
             captured_frames[frame_idx] = after_extra.copy()
+            if len(captured_frames) > max_kept_frames:
+                oldest = min(captured_frames)
+                del captured_frames[oldest]
             hits, _ = classify_items_in_frame(after_extra)
             for key, conf, abs_y, turns, bought in hits:
                 all_detections.append((key, conf, frame_idx, abs_y, turns, bought))

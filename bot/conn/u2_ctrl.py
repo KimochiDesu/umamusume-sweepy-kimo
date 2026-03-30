@@ -100,6 +100,9 @@ class U2AndroidController(AndroidController):
         transport_cmd = f'host:transport:{self.config.device_name}'
         self._transport_bytes = f'{len(transport_cmd):04x}{transport_cmd}'.encode()
         self._exec_bytes = b'000eexec:screencap'
+
+        self._pool_sock = None
+        self._pool_lock = threading.Lock()
         
         try:
             from bot.base.runtime_state import load_persisted
@@ -107,18 +110,63 @@ class U2AndroidController(AndroidController):
         except Exception:
             pass
 
+    def _create_adb_socket(self):
+        sock = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
+        sock.settimeout(5.0)
+        sock.setsockopt(socket.IPPROTO_TCP, socket.TCP_NODELAY, 1)
+        sock.setsockopt(socket.SOL_SOCKET, socket.SO_RCVBUF, 2097152)
+        sock.connect(('127.0.0.1', 5037))
+        sock.sendall(self._transport_bytes)
+        resp = sock.recv(4)
+        if not resp or b'OKAY' not in resp:
+            sock.close()
+            return None
+        return sock
+
+    def _close_pool_sock(self):
+        if self._pool_sock is not None:
+            try:
+                self._pool_sock.close()
+            except Exception:
+                pass
+            self._pool_sock = None
+
     def _capture_via_socket(self):
-        sock = None
+        with self._pool_lock:
+            sock = self._pool_sock
+            self._pool_sock = None
+
+        if sock is not None:
+            raw = self._exec_screencap(sock)
+            if raw is not None:
+                try:
+                    sock.close()
+                except Exception:
+                    pass
+                self._prefill_pool()
+                return raw
+            try:
+                sock.close()
+            except Exception:
+                pass
+
         try:
-            sock = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
-            sock.settimeout(5.0)
-            sock.setsockopt(socket.IPPROTO_TCP, socket.TCP_NODELAY, 1)
-            sock.setsockopt(socket.SOL_SOCKET, socket.SO_RCVBUF, 2097152)
-            sock.connect(('127.0.0.1', 5037))
-            sock.sendall(self._transport_bytes)
-            resp = sock.recv(4)
-            if not resp or b'OKAY' not in resp:
+            sock = self._create_adb_socket()
+            if sock is None:
                 return None
+            raw = self._exec_screencap(sock)
+            try:
+                sock.close()
+            except Exception:
+                pass
+            if raw is not None:
+                self._prefill_pool()
+            return raw
+        except Exception:
+            return None
+
+    def _exec_screencap(self, sock):
+        try:
             sock.sendall(self._exec_bytes)
             resp = sock.recv(4)
             if not resp or b'OKAY' not in resp:
@@ -132,12 +180,21 @@ class U2AndroidController(AndroidController):
             return b''.join(chunks) if chunks else None
         except Exception:
             return None
-        finally:
-            if sock:
-                try:
-                    sock.close()
-                except Exception:
-                    pass
+
+    def _prefill_pool(self):
+        def _fill():
+            try:
+                sock = self._create_adb_socket()
+                if sock is None:
+                    return
+                with self._pool_lock:
+                    if self._pool_sock is not None:
+                        sock.close()
+                    else:
+                        self._pool_sock = sock
+            except Exception:
+                pass
+        threading.Thread(target=_fill, daemon=True).start()
 
     def screencap(self):
         now = time.time()
@@ -325,6 +382,7 @@ class U2AndroidController(AndroidController):
             raise
 
     def reinit_connection(self):
+        self._close_pool_sock()
         try:
             subprocess.run([self.path + "adb.exe", "-s", self.config.device_name, "reconnect"], 
                           capture_output=True, timeout=5)
@@ -529,3 +587,4 @@ class U2AndroidController(AndroidController):
 
     def destroy(self):
         self._cached_frame = None
+        self._close_pool_sock()

@@ -382,7 +382,7 @@ def scan_inventory(ctx, stop_when_found=None):
         return owned
 
     while ctx.task.running() and time.time() < scan_deadline:
-        time.sleep(0.08)
+        time.sleep(0.068)
         frame = ctx.ctrl.get_screen()
         if frame is None:
             if proc.poll() is not None:
