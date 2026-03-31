@@ -366,11 +366,15 @@ def scan_inventory(ctx, stop_when_found=None):
 
     item_qtys = {}
     scan_deadline = time.time() + 40
+    last_new_item_time = time.time()
+    idle_timeout = 1.11
+    idle_terminated = False
 
     results = classify_with_qty(img)
     for name, score, y, qty in results:
         if 130 < y < 1030 and (name not in item_qtys or qty > item_qtys[name]):
             item_qtys[name] = qty
+            last_new_item_time = time.time()
     if stop_when_found and any(n == stop_when_found for n, _, _, _ in results):
         try:
             proc.terminate()
@@ -389,12 +393,21 @@ def scan_inventory(ctx, stop_when_found=None):
                 break
             continue
 
+        found_new = False
         results = classify_with_qty(frame)
         for name, score, y, qty in results:
             if 130 < y < 1030 and (name not in item_qtys or qty > item_qtys[name]):
                 item_qtys[name] = qty
+                found_new = True
+
+        if found_new:
+            last_new_item_time = time.time()
 
         if stop_when_found and any(n == stop_when_found for n, _, _, _ in results):
+            break
+
+        if time.time() - last_new_item_time > idle_timeout:
+            idle_terminated = True
             break
 
         if proc.poll() is not None:
@@ -407,7 +420,7 @@ def scan_inventory(ctx, stop_when_found=None):
 
     prev_cursor = -1
     stall_count = 0
-    for _ in range(20):
+    for _ in range(20 if not idle_terminated else 0):
         if not ctx.task.running():
             break
         time.sleep(0.18)
