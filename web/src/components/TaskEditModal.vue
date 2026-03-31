@@ -2372,7 +2372,7 @@ export default {
       expectTimes: 0,
       cron: "* * * * *",
 
-      selectedScenario: 1,
+      selectedScenario: 3,
       selectedUmamusumeTaskType: undefined,
       selectedSupportCard: undefined,
       extraRace: [],
