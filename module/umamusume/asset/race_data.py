@@ -5,7 +5,7 @@ from bot.base.common import ImageMatchConfig
 from bot.base.resource import Template
 from module.umamusume.asset import REF_SUITABLE_RACE
 
-RACE_TEMPLATE_MATCH_ACCURACY = 0.65
+RACE_TEMPLATE_MATCH_ACCURACY = 0.71
 
 RACE_LIST: dict[int, list] = {}
 UMAMUSUME_RACE_TEMPLATE_PATH = "/umamusume/race"
