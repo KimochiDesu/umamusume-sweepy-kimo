@@ -512,6 +512,18 @@ def scan_inventory(ctx, stop_when_found=None):
 
     owned = [(name, qty) for name, qty in item_qtys.items()]
 
+    stat_items = {
+        "Speed Scroll", "Stamina Scroll", "Power Scroll", "Guts Scroll", "Wit Scroll",
+        "Speed Notepad", "Stamina Notepad", "Power Notepad", "Guts Notepad", "Wit Notepad",
+        "Speed Manual", "Stamina Manual", "Power Manual", "Guts Manual", "Wit Manual",
+        "Speed Training Application", "Stamina Training Application",
+        "Power Training Application", "Guts Training Application", "Wit Training Application",
+    }
+    owned_names = {name for name, qty in owned}
+    if any(item in stat_items for item in owned_names):
+        for _ in range(10):
+            log.info("TURN AUTO USE PROSHOP ITEMS ON IN GAME SETTINGS")
+
     from module.umamusume.persistence import get_ignore_cat_food, get_ignore_grilled_carrots
     if get_ignore_cat_food():
         owned = [(name, qty) for name, qty in owned if name != "Yummy Cat Food"]
