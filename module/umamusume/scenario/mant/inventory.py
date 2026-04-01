@@ -1520,27 +1520,20 @@ def remaining_climax_races(date):
 
 
 def handle_cleat_before_race(ctx, race_id, is_climax_override=False):
+    from module.umamusume.constants.game_constants import SUMMER_CAMP_2_END
+
     if getattr(ctx.cultivate_detail, 'mant_cleat_used', False):
-        log.info("cleat already used this turn, skipping")
         return False
 
-    from module.umamusume.asset.race_data import is_g1_race
-    from module.umamusume.constants.game_constants import CLASSIC_YEAR_END, SENIOR_YEAR_END
     owned = getattr(ctx.cultivate_detail, 'mant_owned_items', [])
     owned_map = {n: q for n, q in owned}
     date = getattr(ctx.cultivate_detail.turn_info, 'date', 0)
+    is_climax_race = is_climax_override or date in MANT_CLIMAX_RACE_TURNS
 
     master_qty = owned_map.get('Master Cleat Hammer', 0)
     artisan_qty = owned_map.get('Artisan Cleat Hammer', 0)
-    total_cleats = master_qty + artisan_qty
 
-    if total_cleats <= 0:
-        return False
-
-    is_climax_race = is_climax_override or date in MANT_CLIMAX_RACE_TURNS
-    is_senior_year = CLASSIC_YEAR_END < date <= SENIOR_YEAR_END
-
-    if is_senior_year and not is_climax_race and total_cleats <= 2:
+    if master_qty + artisan_qty <= 0:
         return False
 
     if is_climax_race:
@@ -1549,38 +1542,48 @@ def handle_cleat_before_race(ctx, race_id, is_climax_override=False):
             if result:
                 ctx.cultivate_detail.mant_cleat_used = True
             return result
-        elif artisan_qty > 0:
+        if artisan_qty > 0:
             result = use_item_and_update_inventory(ctx, 'Artisan Cleat Hammer')
             if result:
                 ctx.cultivate_detail.mant_cleat_used = True
             return result
         return False
 
-    races_left = remaining_climax_races(date)
-    master_reserve = min(races_left, master_qty)
-    artisan_reserve = max(0, races_left - master_reserve)
-    master_spare = master_qty - master_reserve
-    artisan_spare = artisan_qty - artisan_reserve
-
-    if is_g1_race(race_id):
-        if master_spare > 0:
+    if date >= SUMMER_CAMP_2_END:
+        total = master_qty + artisan_qty
+        if total <= 2:
+            return False
+        reserve_total = min(2, total)
+        reserve_master = min(master_qty, reserve_total)
+        spare_master = master_qty - reserve_master
+        spare_artisan = artisan_qty - (reserve_total - reserve_master)
+        if spare_master > 0:
             result = use_item_and_update_inventory(ctx, 'Master Cleat Hammer')
             if result:
                 ctx.cultivate_detail.mant_cleat_used = True
             return result
-        elif artisan_spare > 0:
+        if spare_artisan > 0:
             result = use_item_and_update_inventory(ctx, 'Artisan Cleat Hammer')
             if result:
                 ctx.cultivate_detail.mant_cleat_used = True
             return result
         return False
-    else:
-        if artisan_spare > 0:
-            result = use_item_and_update_inventory(ctx, 'Artisan Cleat Hammer')
-            if result:
-                ctx.cultivate_detail.mant_cleat_used = True
-            return result
+
+    from module.umamusume.asset.race_data import is_g1_race
+    if not is_g1_race(race_id):
         return False
+
+    if master_qty > 0:
+        result = use_item_and_update_inventory(ctx, 'Master Cleat Hammer')
+        if result:
+            ctx.cultivate_detail.mant_cleat_used = True
+        return result
+    if artisan_qty > 0:
+        result = use_item_and_update_inventory(ctx, 'Artisan Cleat Hammer')
+        if result:
+            ctx.cultivate_detail.mant_cleat_used = True
+        return result
+    return False
 
 
 def should_skip_race(ctx):
