@@ -207,11 +207,6 @@ def script_cultivate_race_list(ctx: UmamusumeContext):
                     ctx.cultivate_detail.turn_info.turn_operation = None
                     if hasattr(ti, 'race_search_started_at'):
                         delattr(ti, 'race_search_started_at')
-                    if hasattr(ti, 'race_search_id'):
-                        delattr(ti, 'race_search_id')
-                    if hasattr(ti, 'race_search_retried'):
-                        delattr(ti, 'race_search_retried')
-                    ctx.ctrl.click_by_point(RETURN_TO_CULTIVATE_MAIN_MENU)
                     return
                 race_id = ctx.cultivate_detail.turn_info.turn_operation.race_id
                 log.info(f"Looking for race ID: {race_id}")
@@ -231,31 +226,13 @@ def script_cultivate_race_list(ctx: UmamusumeContext):
                     return
                 img = cv2.cvtColor(img, cv2.COLOR_BGR2RGB)
                 if not compare_color_equal(img[1006, 701], [211, 209, 219]):
-                    if not getattr(ti, 'race_search_retried', False):
-                        log.info(f"Bottom reached")
-                        spam_deadline = time.time() + 3.7
-                        while time.time() < spam_deadline:
-                            ctx.ctrl.swipe(x1=340, y1=900, x2=347, y2=400, duration=80, name="")
-                            time.sleep(0.08)
-                        time.sleep(0.3)
-                        img = ctx.ctrl.get_screen()
-                        continue
-                    try:
-                        if getattr(ctx.task.detail, 'extra_race_list', None) is ctx.cultivate_detail.extra_race_list:
-                            ctx.cultivate_detail.extra_race_list = list(ctx.cultivate_detail.extra_race_list)
-                        if race_id and race_id in ctx.cultivate_detail.extra_race_list:
-                            ctx.cultivate_detail.extra_race_list.remove(race_id)
-                    except Exception as e:
-                        log.debug(f"fail2: {e}")
-                    ctx.cultivate_detail.turn_info.turn_operation = None
-                    if hasattr(ti, 'race_search_started_at'):
-                        delattr(ti, 'race_search_started_at')
-                    if hasattr(ti, 'race_search_id'):
-                        delattr(ti, 'race_search_id')
-                    if hasattr(ti, 'race_search_retried'):
-                        delattr(ti, 'race_search_retried')
-                    ctx.ctrl.click_by_point(RETURN_TO_CULTIVATE_MAIN_MENU)
-                    return
+                    log.info(f"Bottom reached")
+                    spam_deadline = time.time() + 3.7
+                    while time.time() < spam_deadline:
+                        ctx.ctrl.swipe(x1=20, y1=850, x2=20, y2=1000, duration=1000, name="")
+                        time.sleep(0.17)
+                    time.sleep(0.3)
+                    img = ctx.ctrl.get_screen()
                 ctx.ctrl.swipe(x1=20, y1=1000, x2=20, y2=850, duration=1000, name="")
                 time.sleep(0.58)
                 img = ctx.ctrl.get_screen()
