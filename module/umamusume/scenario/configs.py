@@ -38,23 +38,23 @@ class MantConfig:
 
     def __init__(self, config: dict):
         self.item_tiers = config.get("item_tiers", {})
-        self.tier_count = config.get("tier_count", 1)
+        self.tier_count = config.get("tier_count", 8)
         self.whistle_threshold = config.get("whistle_threshold", 20)
         self.whistle_focus_summer = config.get("whistle_focus_summer", True)
         self.focus_summer_classic = config.get("focus_summer_classic", 20)
         self.focus_summer_senior = config.get("focus_summer_senior", 10)
-        self.mega_small_threshold = config.get("mega_small_threshold", 40)
-        self.mega_medium_threshold = config.get("mega_medium_threshold", 50)
-        self.mega_large_threshold = config.get("mega_large_threshold", 60)
+        self.mega_small_threshold = config.get("mega_small_threshold", 37)
+        self.mega_medium_threshold = config.get("mega_medium_threshold", 42)
+        self.mega_large_threshold = config.get("mega_large_threshold", 47)
         self.mega_race_penalty = config.get("mega_race_penalty", 5)
         self.mega_summer_bonus = config.get("mega_summer_bonus", 10)
         self.training_weights_threshold = config.get("training_weights_threshold", 40)
-        self.bbq_unmaxxed_cards = config.get("bbq_unmaxxed_cards", 1)
-        self.charm_threshold = config.get("charm_threshold", 70)
-        self.charm_failure_rate = config.get("charm_failure_rate", 30)
+        self.bbq_unmaxxed_cards = config.get("bbq_unmaxxed_cards", 3)
+        self.charm_threshold = config.get("charm_threshold", 40)
+        self.charm_failure_rate = config.get("charm_failure_rate", 21)
         raw_thresholds = config.get("tier_thresholds", {})
         self.tier_thresholds = {int(k): v for k, v in raw_thresholds.items()}
-        self.skip_race_percentile = config.get("skip_race_percentile", 81)
+        self.skip_race_percentile = config.get("skip_race_percentile", 0)
 
 
 class ScenarioConfig:

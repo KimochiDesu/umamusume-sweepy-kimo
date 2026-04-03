@@ -2264,7 +2264,7 @@ export default {
       // MANT item selection
       mantDragOverTier: null,
       mantDragItemId: null,
-      mantTierCount: 2,
+      mantTierCount: 8,
       mantItemIds: [
         'speed_notepad','speed_manual','speed_scroll',
         'stamina_notepad','stamina_manual','stamina_scroll',
@@ -2286,17 +2286,17 @@ export default {
       mantWhistleFocusSummer: true,
       mantFocusSummerClassic: 20,
       mantFocusSummerSenior: 10,
-      mantMegaSmallThreshold: 50,
-      mantMegaMediumThreshold: 60,
-      mantMegaLargeThreshold: 70,
+      mantMegaSmallThreshold: 37,
+      mantMegaMediumThreshold: 42,
+      mantMegaLargeThreshold: 47,
       mantMegaRacePenalty: 5,
       mantMegaSummerBonus: 10,
-      mantTrainingWeightsThreshold: 60,
-      mantBbqUnmaxxedCards: 1,
-      mantCharmThreshold: 70,
-      mantCharmFailureRate: 30,
+      mantTrainingWeightsThreshold: 40,
+      mantBbqUnmaxxedCards: 3,
+      mantCharmThreshold: 40,
+      mantCharmFailureRate: 21,
       mantSkipRacePercentile: 0,
-      mantTierThresholds: {2: 50, 3: 100, 4: 150, 5: 200, 6: 250},
+      mantTierThresholds: {"3":51,"7":300,"8":99999999999},
       levelDataList: [],
       umamusumeTaskTypeList: [
         {
@@ -4126,23 +4126,23 @@ export default {
       }
       if ('mant_config' in this.presetsUse && this.presetsUse.mant_config.item_tiers) {
         this.mantItemTiers = this.presetsUse.mant_config.item_tiers;
-        this.mantTierCount = this.presetsUse.mant_config.tier_count || 6;
+        this.mantTierCount = this.presetsUse.mant_config.tier_count || 8;
         this.mantNormalizeTiers();
         this.mantWhistleThreshold = this.presetsUse.mant_config.whistle_threshold ?? 20;
         this.mantWhistleFocusSummer = this.presetsUse.mant_config.whistle_focus_summer ?? true;
         this.mantFocusSummerClassic = this.presetsUse.mant_config.focus_summer_classic ?? 20;
         this.mantFocusSummerSenior = this.presetsUse.mant_config.focus_summer_senior ?? 10;
-        this.mantMegaSmallThreshold = this.presetsUse.mant_config.mega_small_threshold ?? 40;
-        this.mantMegaMediumThreshold = this.presetsUse.mant_config.mega_medium_threshold ?? 50;
-        this.mantMegaLargeThreshold = this.presetsUse.mant_config.mega_large_threshold ?? 60;
+        this.mantMegaSmallThreshold = this.presetsUse.mant_config.mega_small_threshold ?? 37;
+        this.mantMegaMediumThreshold = this.presetsUse.mant_config.mega_medium_threshold ?? 42;
+        this.mantMegaLargeThreshold = this.presetsUse.mant_config.mega_large_threshold ?? 47;
         this.mantMegaRacePenalty = this.presetsUse.mant_config.mega_race_penalty ?? 5;
         this.mantMegaSummerBonus = this.presetsUse.mant_config.mega_summer_bonus ?? 10;
         this.mantTrainingWeightsThreshold = this.presetsUse.mant_config.training_weights_threshold ?? 40;
-        this.mantBbqUnmaxxedCards = this.presetsUse.mant_config.bbq_unmaxxed_cards ?? 1;
-        this.mantCharmThreshold = this.presetsUse.mant_config.charm_threshold ?? 70;
-        this.mantCharmFailureRate = this.presetsUse.mant_config.charm_failure_rate ?? 30;
-        this.mantSkipRacePercentile = this.presetsUse.mant_config.skip_race_percentile ?? 81;
-        this.mantTierThresholds = this.presetsUse.mant_config.tier_thresholds ?? {};
+        this.mantBbqUnmaxxedCards = this.presetsUse.mant_config.bbq_unmaxxed_cards ?? 3;
+        this.mantCharmThreshold = this.presetsUse.mant_config.charm_threshold ?? 40;
+        this.mantCharmFailureRate = this.presetsUse.mant_config.charm_failure_rate ?? 21;
+        this.mantSkipRacePercentile = this.presetsUse.mant_config.skip_race_percentile ?? 0;
+        this.mantTierThresholds = this.presetsUse.mant_config.tier_thresholds ?? {"3":51,"7":300,"8":99999999999};
       } else {
         this.mantItemTiers = this.mantGetDefaultTiers();
         this.mantTierCount = 8;

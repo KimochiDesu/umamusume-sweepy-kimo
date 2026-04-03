@@ -1053,14 +1053,14 @@ def handle_charm(ctx):
     below_count = sum(1 for s in prev if s < best_score)
     percentile = below_count / len(prev) * 100
 
-    charm_threshold = getattr(mant_cfg, 'charm_threshold', 80)
+    charm_threshold = getattr(mant_cfg, 'charm_threshold', 40)
 
     if percentile <= charm_threshold:
         return False
 
     til = ctx.cultivate_detail.turn_info.training_info_list[best_idx]
     fr = int(getattr(til, 'failure_rate', 0))
-    charm_failure_rate = getattr(mant_cfg, 'charm_failure_rate', 10)
+    charm_failure_rate = getattr(mant_cfg, 'charm_failure_rate', 21)
     if fr < charm_failure_rate:
         return False
 
@@ -1421,7 +1421,7 @@ def handle_anklet(ctx):
     if percentile is None:
         return False
 
-    threshold = getattr(mant_cfg, 'training_weights_threshold', 60)
+    threshold = getattr(mant_cfg, 'training_weights_threshold', 40)
     if percentile < threshold:
         return False
 
