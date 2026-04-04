@@ -217,11 +217,13 @@ def is_effect_text(text):
 
 
 def is_purchased(frame, item_y):
-    row_y1 = max(0, int(item_y) - 20)
-    row_y2 = min(frame.shape[0], int(item_y) + 60)
-    roi = frame[row_y1:row_y2, PURCHASED_CHECK_X1:PURCHASED_CHECK_X2]
+    cb_y = int(item_y) + 10
+    roi = frame[max(0, cb_y):min(frame.shape[0], cb_y + 10), CHECKBOX_FILL_X1:CHECKBOX_FILL_X2]
+    if roi.size == 0:
+        return False
     gray = cv2.cvtColor(roi, cv2.COLOR_BGR2GRAY)
-    return float(cv2.mean(gray)[0]) < PURCHASED_BRIGHTNESS_THRESHOLD
+    mean_val = float(cv2.mean(gray)[0])
+    return mean_val < 120
 
 
 def classify_items_in_frame(frame):
@@ -849,21 +851,18 @@ def buy_shop_items(ctx, target_names, items_list, ratio, drag_ratio, first_item_
                 clicked_any = True
 
         if clicked_any:
-            continue
-
-        img_rgb = cv2.cvtColor(frame, cv2.COLOR_BGR2RGB)
-        if at_bottom(img_rgb):
-            break
-
-        thumb = find_thumb(img_rgb)
-        if thumb is None:
-            break
-        cursor = (thumb[0] + thumb[1]) // 2
-        th = thumb[1] - thumb[0]
-        next_y = min(TRACK_BOT, cursor + max(th // 2, 10))
-        if next_y <= cursor:
-            break
-        sb_drag(ctx, cursor, next_y)
+            img_rgb = cv2.cvtColor(frame, cv2.COLOR_BGR2RGB)
+            if at_bottom(img_rgb):
+                break
+            thumb = find_thumb(img_rgb)
+            if thumb is None:
+                break
+            cursor = (thumb[0] + thumb[1]) // 2
+            th = thumb[1] - thumb[0]
+            next_y = min(TRACK_BOT, cursor + max(th // 2, 10))
+            if next_y <= cursor:
+                break
+            sb_drag(ctx, cursor, next_y)
 
     if selected == 0:
         ctx.ctrl.click(BACK_BTN_X, BACK_BTN_Y)
