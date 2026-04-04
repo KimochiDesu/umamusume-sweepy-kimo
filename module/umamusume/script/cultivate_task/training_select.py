@@ -360,9 +360,10 @@ def script_cultivate_training_select(ctx: UmamusumeContext):
                     slot_start = time.perf_counter()
                     retry = 0
                     ctx.ctrl.click_by_point(TRAINING_POINT_LIST[i])
+                    time.sleep(TRAINING_CLICK_DELAY)
                     img = ctx.ctrl.get_screen()
                     while parse_train_type(ctx, img) != TrainingType(i + 1) and retry < MAX_TRAINING_RETRY:
-                        if retry > 2:
+                        if retry >= 1:
                             ctx.ctrl.click_by_point(TRAINING_POINT_LIST[i])
                         time.sleep(TRAINING_RETRY_DELAY)
                         img = ctx.ctrl.get_screen()

@@ -693,4 +693,4 @@ def script_info(ctx: UmamusumeContext):
             ctx.ctrl.click(95, 1228)
         if title_text == TITLE[52]:
             ctx.ctrl.click(200, 805, "Career Complete to home")
-        time.sleep(1)
+        time.sleep(0.5)

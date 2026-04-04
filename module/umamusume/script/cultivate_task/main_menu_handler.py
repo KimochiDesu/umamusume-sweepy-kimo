@@ -109,9 +109,9 @@ def script_cultivate_main_menu(ctx: UmamusumeContext):
                     dates = detect_team_sirius_dates(ctx)
                     ctx.cultivate_detail.team_sirius_available_dates = dates
                     log.info(f"Team Sirius: Available dates: {dates}")
-                time.sleep(0.5)
-                img = ctx.ctrl.get_screen()
-                ctx.current_screen = img
+                    time.sleep(0.5)
+                    img = ctx.ctrl.get_screen()
+                    ctx.current_screen = img
 
         if not ts_enabled and ctx.cultivate_detail.prioritize_recreation:
             if ctx.cultivate_detail.pal_event_stage <= 0:
