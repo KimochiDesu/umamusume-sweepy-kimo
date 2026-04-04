@@ -1,7 +1,7 @@
 mumu seems to crash even when idle no bot no uma nothing. go use another emulator for now idk what.
 
 turn auto use items on for mant 
-also significantly reduced progress for a bit gonna go map out all the event response for dumper 
+
 # Sweepy — /vg/'s Uma Musume Bot (UAT REHASHED)
 
 ### A umamusume bot that handles all aspects of gameplay including training, races, events, skill purchasing, and starting runs. 
