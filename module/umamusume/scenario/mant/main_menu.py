@@ -383,12 +383,14 @@ def handle_mant_shop_scan(ctx, current_date, force_scan=False):
                     budget -= cost
 
         # Define item categories for prioritization: energy > stats > others
-        ENERGY_ITEMS = {'Energy Drink MAX', 'Energy Drink MAX EX'}
+        ENERGY_ITEMS = {
+            'Vita 20', 'Vita 40', 'Vita 65',
+            'Royal Kale Juice'
+        }
         STATS_ITEMS = {
             'Speed Notepad', 'Stamina Notepad', 'Power Notepad', 'Guts Notepad', 'Wit Notepad',
             'Speed Manual', 'Stamina Manual', 'Power Manual', 'Guts Manual', 'Wit Manual',
             'Speed Scroll', 'Stamina Scroll', 'Power Scroll', 'Guts Scroll', 'Wit Scroll',
-            'Vita 20', 'Vita 40', 'Vita 65',
             'Speed Training Application', 'Stamina Training Application', 'Power Training Application',
             'Guts Training Application', 'Wit Training Application',
             'Speed Ankle Weights', 'Stamina Ankle Weights', 'Power Ankle Weights', 'Guts Ankle Weights'
