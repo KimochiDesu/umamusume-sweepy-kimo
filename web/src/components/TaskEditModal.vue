@@ -3739,11 +3739,16 @@ export default {
       };
 
       if (this.editingTaskId) {
-        this.axios.delete("/task", { task_id: this.editingTaskId }).then(() => {
-          submitTask();
+        // Update existing task without stopping it
+        const updatePayload = {
+          task_id: this.editingTaskId,
+          attachment_data: payload.attachment_data
+        };
+        this.axios.put("/task", updatePayload).then(() => {
+          this.editingTaskId = null;
+          $('#create-task-list-modal').modal('hide');
         }).catch(e => {
           console.error(e);
-          submitTask();
         });
       } else {
         submitTask();
@@ -3780,7 +3785,7 @@ export default {
         this.learnSkillThreshold = this.presetsUse.learn_skill_threshold
         if ('tactic_actions' in this.presetsUse) {
           if (this.presetsUse.tactic_actions && this.presetsUse.tactic_actions.length > 0) {
-            this.raceTacticConditions = this.presetsUse.tactic_actions;
+            this.raceTacticConditions = this.presetsUse.tactic_actions.map(action => ({...action}));
           } else {
             this.raceTacticConditions = [];
           }
@@ -4188,7 +4193,7 @@ export default {
       }
       if ('tactic_actions' in data) {
         if (data.tactic_actions && data.tactic_actions.length > 0) {
-          this.raceTacticConditions = data.tactic_actions;
+          this.raceTacticConditions = data.tactic_actions.map(action => ({...action}));
         } else {
           this.raceTacticConditions = [];
         }
@@ -5594,7 +5599,7 @@ export default {
   border-radius: 8px;
   padding: 16px;
   min-height: 80px;
-  background: #f8f9fa;
+  background: var(--surface-2);
   transition: all 0.2s ease;
 }
 

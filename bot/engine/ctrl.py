@@ -22,6 +22,10 @@ def delete_task(task_id):
     scheduler.delete_task(task_id)
 
 
+def update_task(task_id, attachment_data):
+    return scheduler.update_task(task_id, attachment_data)
+
+
 def get_task_list():
     return scheduler.get_task_list()
 

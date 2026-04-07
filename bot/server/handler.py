@@ -29,6 +29,11 @@ class DeleteTaskRequest(BaseModel):
     task_id: str
 
 
+class UpdateTaskRequest(BaseModel):
+    task_id: str
+    attachment_data: object
+
+
 class ResetTaskRequest(BaseModel):
     task_id: str
 
@@ -126,6 +131,15 @@ def add_task(req: AddTaskRequest):
 @server.delete("/task")
 def delete_task(req: DeleteTaskRequest = Body(...)):
     bot_ctrl.delete_task(req.task_id)
+
+
+@server.put("/task")
+def update_task(req: UpdateTaskRequest):
+    success = bot_ctrl.update_task(req.task_id, req.attachment_data)
+    if success:
+        return {"status": "updated"}
+    else:
+        return {"status": "not_found"}, 404
 
 
 @server.get("/task")

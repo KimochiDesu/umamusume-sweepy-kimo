@@ -1613,32 +1613,41 @@ def handle_cleat_before_race(ctx, race_id, is_climax_override=False):
     from module.umamusume.asset.race_data import is_g1_race
 
     if date > SUMMER_CAMP_2_START:
-        total = master_qty + artisan_qty
-        if total <= 2:
-            return False
-        reserve_total = min(2, total)
-        reserve_master = min(master_qty, reserve_total)
+        # Calculate how many climax races are left to reserve master cleats for
+        remaining_climax = remaining_climax_races(date)
+        reserve_master = min(remaining_climax, master_qty)
+
+        # Only use cleats if we have more than the reserved amount
         spare_master = master_qty - reserve_master
-        spare_artisan = artisan_qty - (reserve_total - reserve_master)
+        spare_artisan = artisan_qty  # All artisan cleats are spare
+
+        total = master_qty + artisan_qty
+        if total <= remaining_climax:
+            return False
 
         is_senior = date <= SENIOR_YEAR_END
 
-        if is_senior and master_qty < 3 and spare_artisan > 0:
+        # Prioritize artisan cleats if in senior year and we haven't reserved enough master cleats yet
+        if is_senior and master_qty < remaining_climax and spare_artisan > 0:
             result = use_item_and_update_inventory(ctx, 'Artisan Cleat Hammer')
             if result:
                 ctx.cultivate_detail.mant_cleat_used = True
             return result
 
+        # Use spare master cleats if available
         if spare_master > 0:
             result = use_item_and_update_inventory(ctx, 'Master Cleat Hammer')
             if result:
                 ctx.cultivate_detail.mant_cleat_used = True
             return result
+
+        # Use artisan cleats if available
         if spare_artisan > 0:
             result = use_item_and_update_inventory(ctx, 'Artisan Cleat Hammer')
             if result:
                 ctx.cultivate_detail.mant_cleat_used = True
             return result
+
         return False
 
     if not is_g1_race(race_id):

@@ -54,6 +54,20 @@ class Scheduler:
                     return True
             return False
 
+    def update_task(self, task_id, attachment_data):
+        with self._executor_lock:
+            for v in self.task_list:
+                if v.task_id == task_id:
+                    v.attachment_data = attachment_data
+                    # Update detail if task has been initialized
+                    if hasattr(v, 'detail') and v.detail is not None:
+                        from importlib import import_module
+                        module = import_module(f'{v.app_name}.task')
+                        v.detail = module.load_attachment_data(attachment_data)
+                    log.info(f"Task {task_id} updated (status: {v.task_status})")
+                    return True
+            return False
+
     def reset_task(self, task_id):
         with self._executor_lock:
             reset_idx = -1
