@@ -215,6 +215,24 @@ def handle_mant_shop_scan(ctx, current_date):
         if bought_cures:
             ctx.cultivate_detail._mant_bought_cures_this_cycle = bought_cures
 
+        # On first-ever shop turn (chunk 0, never seen before), ensure Coaching Megaphone
+        # is bought if not already covered by tier config
+        is_first_shop_turn = (chunk == 0 and last_chunk == -1)
+        coaching_megaphone_name = "Coaching Megaphone"
+        coaching_megaphone_forced = False
+        if is_first_shop_turn and coaching_megaphone_name in shop_available:
+            coaching_in_tiers = False
+            if mant_cfg and mant_cfg.item_tiers:
+                tier_val = mant_cfg.item_tiers.get("coaching_megaphone")
+                coaching_in_tiers = tier_val is not None and tier_val <= mant_cfg.tier_count
+            if not coaching_in_tiers and coaching_megaphone_name not in set(priority_targets):
+                cost = SHOP_ITEM_COSTS.get(coaching_megaphone_name, 40)
+                if cost <= budget:
+                    log.info("First shop turn: forcing Coaching Megaphone purchase")
+                    priority_targets.insert(0, coaching_megaphone_name)
+                    budget -= cost
+                    coaching_megaphone_forced = True
+
         priority_set = set(priority_targets)
 
         all_cures = set(AILMENT_CURE_MAP.values())
@@ -407,6 +425,20 @@ def handle_mant_shop_scan(ctx, current_date):
                         log.warning(f"Post-purchase check: could not open inventory - continuing anyway")
                 else:
                     log.info("Post-purchase check: all planned items found in inventory")
+
+            # If Coaching Megaphone was forcefully added on first shop turn, use it immediately
+            from module.umamusume.scenario.mant.inventory import use_item_and_update_inventory, open_items_panel, close_items_panel
+            if coaching_megaphone_forced:
+                log.info("First shop turn: using Coaching Megaphone immediately")
+                opened = open_items_panel(ctx)
+                if opened:
+                    if use_item_and_update_inventory(ctx, coaching_megaphone_name):
+                        log.info("First shop turn: Coaching Megaphone used successfully")
+                    else:
+                        log.warning("First shop turn: Coaching Megaphone use failed, reserving in inventory")
+                    close_items_panel(ctx)
+                else:
+                    log.warning("First shop turn: could not open items panel to use megaphone")
 
     if not bought:
         from module.umamusume.scenario.mant.shop import BACK_BTN_X, BACK_BTN_Y
