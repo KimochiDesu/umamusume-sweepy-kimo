@@ -135,11 +135,12 @@ def delete_task(req: DeleteTaskRequest = Body(...)):
 
 @server.put("/task")
 def update_task(req: UpdateTaskRequest):
+    from fastapi import HTTPException
     success = bot_ctrl.update_task(req.task_id, req.attachment_data)
     if success:
         return {"status": "updated"}
     else:
-        return {"status": "not_found"}, 404
+        raise HTTPException(status_code=404, detail="Task not found")
 
 
 @server.get("/task")
