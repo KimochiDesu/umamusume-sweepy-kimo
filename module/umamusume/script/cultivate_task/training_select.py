@@ -76,17 +76,26 @@ def script_cultivate_training_select(ctx: UmamusumeContext):
                 uma = ctx.cultivate_detail.turn_info.uma_attribute
                 current_stats = (uma.speed, uma.stamina, uma.power, uma.will, uma.intelligence)
                 if current_stats != cached_stats:
-                    log.info(f"Cache invalid. was {cached_stats}, now {current_stats})")
+                    log.info(f"[training_select] Cache invalid: was {cached_stats}, now {current_stats}")
                     ctx.cultivate_detail.turn_info.turn_operation = None
                     ctx.cultivate_detail.turn_info.parse_train_info_finish = False
                     ctx.cultivate_detail.mant_cleat_used = False
                     turn_op = None
+                else:
+                    log.info(f"[training_select] Cache VALID (stats match)")
+            else:
+                log.info(f"[training_select] No cached stats to validate against")
         except Exception:
             pass
 
     if turn_op is not None:
         if turn_op.turn_operation_type == TurnOperationType.TURN_OPERATION_TYPE_TRAINING:
             training_type = turn_op.training_type
+            # Training already decided and we're entering training select screen.
+            # Clear cache so that when we return from training animation with
+            # legitimately changed stats, the cache invalidation doesn't fire
+            # on the next entry and force a full re-scan.
+            ctx.cultivate_detail.last_decision_stats = None
             ctx.ctrl.click_by_point(TRAINING_POINT_LIST[training_type.value - 1])
             time.sleep(TRAINING_CLICK_DELAY)
             ctx.ctrl.click_by_point(TRAINING_POINT_LIST[training_type.value - 1])
@@ -158,6 +167,8 @@ def script_cultivate_training_select(ctx: UmamusumeContext):
         ctx.cultivate_detail.turn_info.turn_operation = op
         ctx.ctrl.click_by_point(RETURN_TO_CULTIVATE_MAIN_MENU)
         return
+
+    local_training_type = getattr(ctx.cultivate_detail.turn_info, 'cached_training_type', None)
 
     if not ctx.cultivate_detail.turn_info.parse_train_info_finish:
 
@@ -338,7 +349,12 @@ def script_cultivate_training_select(ctx: UmamusumeContext):
         img = ctx.current_screen
         train_type = parse_train_type(ctx, img)
         if train_type == TrainingType.TRAINING_TYPE_UNKNOWN:
-            return
+            time.sleep(0.5)
+            img = ctx.ctrl.get_screen()
+            train_type = parse_train_type(ctx, img)
+            if train_type == TrainingType.TRAINING_TYPE_UNKNOWN:
+                ctx.ctrl.click_by_point(RETURN_TO_CULTIVATE_MAIN_MENU)
+                return
         viewed = train_type.value
 
    
@@ -360,9 +376,10 @@ def script_cultivate_training_select(ctx: UmamusumeContext):
                     slot_start = time.perf_counter()
                     retry = 0
                     ctx.ctrl.click_by_point(TRAINING_POINT_LIST[i])
+                    time.sleep(TRAINING_CLICK_DELAY)
                     img = ctx.ctrl.get_screen()
                     while parse_train_type(ctx, img) != TrainingType(i + 1) and retry < MAX_TRAINING_RETRY:
-                        if retry > 2:
+                        if retry >= 1:
                             ctx.ctrl.click_by_point(TRAINING_POINT_LIST[i])
                         time.sleep(TRAINING_RETRY_DELAY)
                         img = ctx.ctrl.get_screen()
@@ -738,6 +755,7 @@ def script_cultivate_training_select(ctx: UmamusumeContext):
         ctx.cultivate_detail.turn_info.cached_stat_only_score = best_stat_score
 
         history = ctx.cultivate_detail.score_history
+        percentile = 0.0
         best_score = max(original_scores)
         history.append(best_score)
         if len(history) >= 2:
@@ -825,21 +843,7 @@ def script_cultivate_training_select(ctx: UmamusumeContext):
                 has_extra_race_next = len([r for r in ctx.cultivate_detail.extra_race_list 
                                            if r in available_races]) > 0
                 
-                if (max_score < wit_race_threshold and 
-                    current_energy > 90 and 
-                    not has_extra_race_next):
-                    
-                    log.info(f"Race search: Max score {max_score:.3f}<{wit_race_threshold}, Energy {current_energy}>90, No races next turn")
-                    
-                    ctx.cultivate_detail.turn_info.race_search_attempted = True
-                    
-                    op = TurnOperation()
-                    op.turn_operation_type = TurnOperationType.TURN_OPERATION_TYPE_RACE
-                    op.race_id = 0
-                    ctx.cultivate_detail.turn_info.turn_operation = op
-                    
-                    ctx.ctrl.click_by_point(RETURN_TO_CULTIVATE_MAIN_MENU)
-                    return
+                ctx.cultivate_detail.turn_info.race_search_attempted = True
             
             if date in (35, 36, 59, 60):
                 best_idx_tmp = int(np.argmax(computed_scores))
@@ -862,21 +866,39 @@ def script_cultivate_training_select(ctx: UmamusumeContext):
             ctx.cultivate_detail.last_decision_stats = (uma.speed, uma.stamina, uma.power, uma.will, uma.intelligence)
         except Exception:
             pass
-       
+ 
+
+    history = getattr(ctx.cultivate_detail, 'score_history', [])
+    percentile = getattr(ctx.cultivate_detail, 'percentile_history', [])
+    percentile = percentile[-1] if percentile else 0.0
+    computed_scores = getattr(ctx.cultivate_detail.turn_info, 'cached_computed_scores', [0.0, 0.0, 0.0, 0.0, 0.0])
 
     from module.umamusume.script.cultivate_task.ai import get_operation
     op_ai = get_operation(ctx)
     if op_ai is None:
         op = TurnOperation()
         op.turn_operation_type = TurnOperationType.TURN_OPERATION_TYPE_TRAINING
+        if local_training_type is None:
+            local_training_type = TrainingType.TRAINING_TYPE_SPEED
         op.training_type = local_training_type
         ctx.cultivate_detail.turn_info.turn_operation = op
         new_is_race = False
     else:
-        if op_ai.turn_operation_type == TurnOperationType.TURN_OPERATION_TYPE_TRAINING and (op_ai.training_type == TrainingType.TRAINING_TYPE_UNKNOWN):
-            op_ai.training_type = local_training_type
-        ctx.cultivate_detail.turn_info.turn_operation = op_ai
-        new_is_race = (op_ai.turn_operation_type == TurnOperationType.TURN_OPERATION_TYPE_RACE)
+        if op_ai.turn_operation_type == TurnOperationType.TURN_OPERATION_TYPE_RACE and getattr(op_ai, 'race_id', 0) == 0:
+            op = TurnOperation()
+            op.turn_operation_type = TurnOperationType.TURN_OPERATION_TYPE_TRAINING
+            if local_training_type is None:
+                local_training_type = TrainingType.TRAINING_TYPE_SPEED
+            op.training_type = local_training_type
+            ctx.cultivate_detail.turn_info.turn_operation = op
+            new_is_race = False
+        else:
+            if op_ai.turn_operation_type == TurnOperationType.TURN_OPERATION_TYPE_TRAINING and (op_ai.training_type == TrainingType.TRAINING_TYPE_UNKNOWN):
+                if local_training_type is None:
+                    local_training_type = TrainingType.TRAINING_TYPE_SPEED
+                op_ai.training_type = local_training_type
+            ctx.cultivate_detail.turn_info.turn_operation = op_ai
+            new_is_race = (op_ai.turn_operation_type == TurnOperationType.TURN_OPERATION_TYPE_RACE)
 
     if not new_is_race and getattr(ctx.cultivate_detail, '_prev_op_was_race', False):
         ctx.cultivate_detail.mant_cleat_used = False
@@ -958,7 +980,7 @@ def script_cultivate_training_select(ctx: UmamusumeContext):
                         log.info("At least one condition failed - continuing with training")
     
     op = ctx.cultivate_detail.turn_info.turn_operation
-    if op.turn_operation_type == TurnOperationType.TURN_OPERATION_TYPE_TRAINING:
+    if op is not None and op.turn_operation_type == TurnOperationType.TURN_OPERATION_TYPE_TRAINING:
         try:
             if ctx.cultivate_detail.scenario.scenario_type() == ScenarioType.SCENARIO_TYPE_MANT:
                 if getattr(ctx.cultivate_detail.turn_info, 'energy_recovery_deferred', False):

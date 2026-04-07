@@ -1,8 +1,8 @@
-DATE_YEAR = ['Junior', 'Classic', 'Senior', 'Finals']
-DATE_MONTH = ['Pre-Debut', 'Early Jan', 'Late Jan', 'Early Feb', 'Late Feb', 'Early Mar', 'Late Mar', 'Early Apr', 'Late Apr',
+DATE_YEAR = ('Junior', 'Classic', 'Senior', 'Finals')
+DATE_MONTH = ('Pre-Debut', 'Early Jan', 'Late Jan', 'Early Feb', 'Late Feb', 'Early Mar', 'Late Mar', 'Early Apr', 'Late Apr',
               'Early May', 'Late May', 'Early Jun', 'Late Jun', 'Early Jul', 'Late Jul',
               'Early Aug', 'Late Aug', 'Early Sep', 'Late Sep', 'Early Oct', 'Late Oct', 'Early Nov', 'Late Nov', 'Early Dec',
-              'Late Dec']
+              'Late Dec')
 
 SKILL_LEARN_PRIORITY_LIST = [
     [

@@ -102,10 +102,11 @@ def init_executor():
 
 
 class ImageMatchResult:
-    matched_area = None
-    center_point = None
-    find_match: bool = False
-    score: int = 0
+    def __init__(self):
+        self.matched_area = None
+        self.center_point = None
+        self.find_match = False
+        self.score = 0
 
 
 def to_gray(img):

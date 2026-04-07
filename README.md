@@ -1,9 +1,7 @@
-<img width="224" height="101" alt="image" src="https://github.com/user-attachments/assets/864febfc-aa47-4b9f-99c9-2b88d55f2281" />       
-
-this event is scripted btw. the numbers aren't adding up with what I'm scraping.       
+mumu seems to crash even when idle no bot no uma nothing. go use another emulator for now idk what.
 
 turn auto use items on for mant 
-also significantly reduced progress for a bit gonna go map out all the event response for dumper 
+
 # Sweepy — /vg/'s Uma Musume Bot (UAT REHASHED)
 
 ### A umamusume bot that handles all aspects of gameplay including training, races, events, skill purchasing, and starting runs. 

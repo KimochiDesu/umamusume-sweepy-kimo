@@ -200,20 +200,21 @@ def get_update_status():
         if cmp.returncode != 0:
             return {"has_update": False, "error": cmp.stderr.strip(), "branch": branch_name}
         parts = cmp.stdout.strip().split()
-        ahead = int(parts[0]) if len(parts) > 0 else 0
+        ahead = int(parts[0]) if parts else 0
         behind = int(parts[1]) if len(parts) > 1 else 0
         head_sha = subprocess.run(["git", "rev-parse", "HEAD"], capture_output=True, text=True, cwd=repo_root, timeout=5)
-        remote_sha = subprocess.run(["git", "rev-parse", revspec.split('...')[1]], capture_output=True, text=True, cwd=repo_root, timeout=5)
+        remote_path = revspec.split('...')[1]
+        remote_sha = subprocess.run(["git", "rev-parse", remote_path], capture_output=True, text=True, cwd=repo_root, timeout=5)
         preset_redo = False
         if behind > 0:
-            log_cmd = subprocess.run(["git", "log", "--oneline", f"HEAD..{revspec.split('...')[1]}"], capture_output=True, text=True, cwd=repo_root, timeout=10)
+            log_cmd = subprocess.run(["git", "log", "--oneline", f"HEAD..{remote_path}"], capture_output=True, text=True, cwd=repo_root, timeout=10)
             if log_cmd.returncode == 0 and "(TR)" in log_cmd.stdout:
                 preset_redo = True
         return {
-            "has_update": bool(behind > 0),
+            "has_update": behind > 0,
             "preset_redo": preset_redo,
             "branch": branch_name,
-            "upstream": revspec.split('...')[1],
+            "upstream": remote_path,
             "ahead": ahead,
             "behind": behind,
             "head": head_sha.stdout.strip() if head_sha.returncode == 0 else "",
@@ -312,9 +313,17 @@ async def get_training_icon(name: str):
 
 
 
-@server.get("/race-icon/{race_id}")
-async def get_race_icon(race_id: str):
-    file_path = os.path.join("resource", "umamusume", "race", race_id + ".png")
+BASE_DIR = os.path.dirname(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
+
+
+@server.get("/race-icon/{race_name:path}")
+async def get_race_icon(race_name: str):
+    from urllib.parse import unquote
+    race_name = unquote(race_name)
+    file_path = os.path.join(BASE_DIR, "races", race_name + ".png")
+    if os.path.isfile(file_path):
+        return FileResponse(file_path, media_type="image/png")
+    file_path = os.path.join(BASE_DIR, "resource", "umamusume", "race", race_name + ".png")
     if os.path.isfile(file_path):
         return FileResponse(file_path, media_type="image/png")
     return JSONResponse(status_code=404, content={"error": "not found"})

@@ -126,7 +126,7 @@ class Scheduler:
 
     def copy_task(self, task, to_task_execute_mode: TaskExecuteMode):
         new_task = copy.deepcopy(task)
-        new_task.task_id = str(int(round(time.time() * 1000)))
+        new_task.task_id = str(int(time.time() * 1000))
         if (to_task_execute_mode == TaskExecuteMode.TASK_EXECUTE_MODE_ONE_TIME and task.task_execute_mode ==
                 TaskExecuteMode.TASK_EXECUTE_MODE_CRON_JOB):
             new_task.task_id = f"CRONJOB_{new_task.task_id}"

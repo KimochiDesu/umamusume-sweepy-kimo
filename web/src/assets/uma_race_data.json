@@ -16,7 +16,8 @@
       "type": "G3",
       "terrain": "Turf",
       "distance": "Sprint",
-      "venue": "Hakodate"
+      "venue": "Hakodate",
+      "fanGain": 3100
     },
     {
       "id": 2005,
@@ -61,7 +62,8 @@
       "type": "G3",
       "terrain": "Turf",
       "distance": "Mile",
-      "venue": "Niigata"
+      "venue": "Niigata",
+      "fanGain": 3100
     },
     {
       "id": 2010,
@@ -79,7 +81,8 @@
       "type": "G3",
       "terrain": "Turf",
       "distance": "Sprint",
-      "venue": "Kokura"
+      "venue": "Kokura",
+      "fanGain": 3100
     },
     {
       "id": 2012,
@@ -97,7 +100,8 @@
       "type": "G3",
       "terrain": "Turf",
       "distance": "Mile",
-      "venue": "Sapporo"
+      "venue": "Sapporo",
+      "fanGain": 3100
     },
     {
       "id": 2014,
@@ -178,7 +182,8 @@
       "type": "G3",
       "terrain": "Turf",
       "distance": "Mile",
-      "venue": "Tokyo"
+      "venue": "Tokyo",
+      "fanGain": 3300
     },
     {
       "id": 2023,
@@ -196,7 +201,8 @@
       "type": "G3",
       "terrain": "Turf",
       "distance": "Mile",
-      "venue": "Tokyo"
+      "venue": "Tokyo",
+      "fanGain": 2900
     },
     {
       "id": 2025,
@@ -232,7 +238,8 @@
       "type": "G2",
       "terrain": "Turf",
       "distance": "Mile",
-      "venue": "Kyoto"
+      "venue": "Kyoto",
+      "fanGain": 3800
     },
     {
       "id": 2029,
@@ -241,7 +248,8 @@
       "type": "G3",
       "terrain": "Turf",
       "distance": "Sprint",
-      "venue": "Kyoto"
+      "venue": "Kyoto",
+      "fanGain": 2900
     },
     {
       "id": 2030,
@@ -268,7 +276,8 @@
       "type": "G2",
       "terrain": "Turf",
       "distance": "Sprint",
-      "venue": "Tokyo"
+      "venue": "Tokyo",
+      "fanGain": 3800
     },
     {
       "id": 2033,
@@ -349,7 +358,8 @@
       "type": "G3",
       "terrain": "Turf",
       "distance": "Medium",
-      "venue": "Kyoto"
+      "venue": "Kyoto",
+      "fanGain": 3300
     },
     {
       "id": 2042,
@@ -385,7 +395,8 @@
       "type": "G3",
       "terrain": "Turf",
       "distance": "Mile",
-      "venue": "Tokyo"
+      "venue": "Tokyo",
+      "fanGain": 3300
     },
     {
       "id": 2046,
@@ -394,7 +405,8 @@
       "type": "G1",
       "terrain": "Turf",
       "distance": "Mile",
-      "venue": "Hanshin"
+      "venue": "Hanshin",
+      "fanGain": 7000
     },
     {
       "id": 2047,
@@ -412,7 +424,8 @@
       "type": "G1",
       "terrain": "Turf",
       "distance": "Mile",
-      "venue": "Hanshin"
+      "venue": "Hanshin",
+      "fanGain": 6500
     },
     {
       "id": 2049,
@@ -475,7 +488,8 @@
       "type": "OP",
       "terrain": "Turf",
       "distance": "Sprint",
-      "venue": "Nakayama"
+      "venue": "Nakayama",
+      "fanGain": 5200
     },
     {
       "id": 2056,
@@ -484,7 +498,8 @@
       "type": "G1",
       "terrain": "Turf",
       "distance": "Medium",
-      "venue": "Nakayama"
+      "venue": "Nakayama",
+      "fanGain": 7000
     },
     {
       "id": 2057,
@@ -502,7 +517,8 @@
       "type": "G3",
       "terrain": "Turf",
       "distance": "Mile",
-      "venue": "Nakayama"
+      "venue": "Nakayama",
+      "fanGain": 3500
     },
     {
       "id": 2059,
@@ -520,7 +536,8 @@
       "type": "G3",
       "terrain": "Turf",
       "distance": "Medium",
-      "venue": "Nakayama"
+      "venue": "Nakayama",
+      "fanGain": 3800
     },
     {
       "id": 2061,
@@ -538,7 +555,8 @@
       "type": "G3",
       "terrain": "Turf",
       "distance": "Mile",
-      "venue": "Kyoto"
+      "venue": "Kyoto",
+      "fanGain": 3800
     },
     {
       "id": 2063,
@@ -574,7 +592,8 @@
       "type": "G3",
       "terrain": "Turf",
       "distance": "Mile",
-      "venue": "Kyoto"
+      "venue": "Kyoto",
+      "fanGain": 3800
     },
     {
       "id": 2067,
@@ -583,7 +602,8 @@
       "type": "G3",
       "terrain": "Turf",
       "distance": "Mile",
-      "venue": "Tokyo"
+      "venue": "Tokyo",
+      "fanGain": 3800
     },
     {
       "id": 2068,
@@ -592,7 +612,8 @@
       "type": "G3",
       "terrain": "Turf",
       "distance": "Mile",
-      "venue": "Tokyo"
+      "venue": "Tokyo",
+      "fanGain": 3500
     },
     {
       "id": 2069,
@@ -655,7 +676,8 @@
       "type": "G2",
       "terrain": "Turf",
       "distance": "Mile",
-      "venue": "Hanshin"
+      "venue": "Hanshin",
+      "fanGain": 5200
     },
     {
       "id": 2076,
@@ -664,7 +686,8 @@
       "type": "G2",
       "terrain": "Turf",
       "distance": "Medium",
-      "venue": "Nakayama"
+      "venue": "Nakayama",
+      "fanGain": 5400
     },
     {
       "id": 2077,
@@ -673,7 +696,8 @@
       "type": "G3",
       "terrain": "Turf",
       "distance": "Sprint",
-      "venue": "Chukyo"
+      "venue": "Chukyo",
+      "fanGain": 3800
     },
     {
       "id": 2078,
@@ -682,7 +706,8 @@
       "type": "G3",
       "terrain": "Turf",
       "distance": "Mile",
-      "venue": "Nakayama"
+      "venue": "Nakayama",
+      "fanGain": 3500
     },
     {
       "id": 2079,
@@ -691,7 +716,8 @@
       "type": "G3",
       "terrain": "Turf",
       "distance": "Mile",
-      "venue": "Hanshin"
+      "venue": "Hanshin",
+      "fanGain": 3800
     },
     {
       "id": 2080,
@@ -700,7 +726,8 @@
       "type": "G2",
       "terrain": "Turf",
       "distance": "Mile",
-      "venue": "Nakayama"
+      "venue": "Nakayama",
+      "fanGain": 5400
     },
     {
       "id": 2081,
@@ -718,7 +745,8 @@
       "type": "G3",
       "terrain": "Turf",
       "distance": "Mile",
-      "venue": "Hanshin"
+      "venue": "Hanshin",
+      "fanGain": 3800
     },
     {
       "id": 2083,
@@ -736,7 +764,8 @@
       "type": "G2",
       "terrain": "Turf",
       "distance": "Mile",
-      "venue": "Nakayama"
+      "venue": "Nakayama",
+      "fanGain": 5400
     },
     {
       "id": 2085,
@@ -745,7 +774,8 @@
       "type": "G1",
       "terrain": "Turf",
       "distance": "Mile",
-      "venue": "Hanshin"
+      "venue": "Hanshin",
+      "fanGain": 10500
     },
     {
       "id": 2086,
@@ -754,7 +784,8 @@
       "type": "G1",
       "terrain": "Turf",
       "distance": "Medium",
-      "venue": "Nakayama"
+      "venue": "Nakayama",
+      "fanGain": 11000
     },
     {
       "id": 2087,
@@ -772,7 +803,8 @@
       "type": "G2",
       "terrain": "Turf",
       "distance": "Medium",
-      "venue": "Tokyo"
+      "venue": "Tokyo",
+      "fanGain": 5400
     },
     {
       "id": 2089,
@@ -781,7 +813,8 @@
       "type": "G2",
       "terrain": "Turf",
       "distance": "Medium",
-      "venue": "Tokyo"
+      "venue": "Tokyo",
+      "fanGain": 5200
     },
     {
       "id": 2090,
@@ -817,7 +850,8 @@
       "type": "G2",
       "terrain": "Turf",
       "distance": "Medium",
-      "venue": "Kyoto"
+      "venue": "Kyoto",
+      "fanGain": 5400
     },
     {
       "id": 2094,
@@ -826,7 +860,8 @@
       "type": "G1",
       "terrain": "Turf",
       "distance": "Mile",
-      "venue": "Tokyo"
+      "venue": "Tokyo",
+      "fanGain": 10500
     },
     {
       "id": 2095,
@@ -853,7 +888,8 @@
       "type": "G3",
       "terrain": "Turf",
       "distance": "Sprint",
-      "venue": "Kyoto"
+      "venue": "Kyoto",
+      "fanGain": 3800
     },
     {
       "id": 2098,
@@ -871,7 +907,8 @@
       "type": "G1",
       "terrain": "Turf",
       "distance": "Medium",
-      "venue": "Tokyo"
+      "venue": "Tokyo",
+      "fanGain": 11000
     },
     {
       "id": 2100,
@@ -898,7 +935,8 @@
       "type": "G3",
       "terrain": "Turf",
       "distance": "Mile",
-      "venue": "Tokyo"
+      "venue": "Tokyo",
+      "fanGain": 4100
     },
     {
       "id": 2103,
@@ -907,7 +945,8 @@
       "type": "G3",
       "terrain": "Turf",
       "distance": "Medium",
-      "venue": "Hanshin"
+      "venue": "Hanshin",
+      "fanGain": 3600
     },
     {
       "id": 2104,
@@ -916,7 +955,8 @@
       "type": "G3",
       "terrain": "Turf",
       "distance": "Medium",
-      "venue": "Hanshin"
+      "venue": "Hanshin",
+      "fanGain": 4100
     },
     {
       "id": 2105,
@@ -943,7 +983,8 @@
       "type": "G1",
       "terrain": "Turf",
       "distance": "Mile",
-      "venue": "Tokyo"
+      "venue": "Tokyo",
+      "fanGain": 13000
     },
     {
       "id": 2108,
@@ -961,7 +1002,8 @@
       "type": "G3",
       "terrain": "Turf",
       "distance": "Sprint",
-      "venue": "Hakodate"
+      "venue": "Hakodate",
+      "fanGain": 3900
     },
     {
       "id": 2110,
@@ -997,7 +1039,8 @@
       "type": "G1",
       "terrain": "Turf",
       "distance": "Medium",
-      "venue": "Hanshin"
+      "venue": "Hanshin",
+      "fanGain": 15000
     },
     {
       "id": 2114,
@@ -1006,7 +1049,8 @@
       "type": "G3",
       "terrain": "Dirt",
       "distance": "Mile",
-      "venue": "Tokyo"
+      "venue": "Tokyo",
+      "fanGain": 3500
     },
     {
       "id": 2115,
@@ -1024,7 +1068,8 @@
       "type": "G3",
       "terrain": "Turf",
       "distance": "Sprint",
-      "venue": "Chukyo"
+      "venue": "Chukyo",
+      "fanGain": 3900
     },
     {
       "id": 2117,
@@ -1033,7 +1078,8 @@
       "type": "G3",
       "terrain": "Turf",
       "distance": "Medium",
-      "venue": "Hakodate"
+      "venue": "Hakodate",
+      "fanGain": 4100
     },
     {
       "id": 2118,
@@ -1042,7 +1088,8 @@
       "type": "G1",
       "terrain": "Dirt",
       "distance": "Medium",
-      "venue": "Ooi"
+      "venue": "Ooi",
+      "fanGain": 4500
     },
     {
       "id": 2119,
@@ -1069,7 +1116,8 @@
       "type": "G3",
       "terrain": "Dirt",
       "distance": "Sprint",
-      "venue": "Chukyo"
+      "venue": "Chukyo",
+      "fanGain": 3600
     },
     {
       "id": 2122,
@@ -1078,7 +1126,8 @@
       "type": "G3",
       "terrain": "Turf",
       "distance": "Mile",
-      "venue": "Fukushima"
+      "venue": "Fukushima",
+      "fanGain": 3800
     },
     {
       "id": 2123,
@@ -1087,7 +1136,8 @@
       "type": "G3",
       "terrain": "Turf",
       "distance": "Medium",
-      "venue": "Fukushima"
+      "venue": "Fukushima",
+      "fanGain": 4100
     },
     {
       "id": 2124,
@@ -1105,7 +1155,8 @@
       "type": "G3",
       "terrain": "Turf",
       "distance": "Mile",
-      "venue": "Chukyo"
+      "venue": "Chukyo",
+      "fanGain": 3900
     },
     {
       "id": 2126,
@@ -1123,7 +1174,8 @@
       "type": "G3",
       "terrain": "Turf",
       "distance": "Sprint",
-      "venue": "Niigata"
+      "venue": "Niigata",
+      "fanGain": 3900
     },
     {
       "id": 2128,
@@ -1132,7 +1184,8 @@
       "type": "G3",
       "terrain": "Turf",
       "distance": "Mile",
-      "venue": "Sapporo"
+      "venue": "Sapporo",
+      "fanGain": 3600
     },
     {
       "id": 2129,
@@ -1150,7 +1203,8 @@
       "type": "G3",
       "terrain": "Dirt",
       "distance": "Mile",
-      "venue": "Sapporo"
+      "venue": "Sapporo",
+      "fanGain": 3600
     },
     {
       "id": 2131,
@@ -1168,7 +1222,8 @@
       "type": "G3",
       "terrain": "Turf",
       "distance": "Medium",
-      "venue": "Kokura"
+      "venue": "Kokura",
+      "fanGain": 4100
     },
     {
       "id": 2133,
@@ -1177,7 +1232,8 @@
       "type": "G3",
       "terrain": "Dirt",
       "distance": "Mile",
-      "venue": "Niigata"
+      "venue": "Niigata",
+      "fanGain": 4000
     },
     {
       "id": 2134,
@@ -1195,7 +1251,8 @@
       "type": "G3",
       "terrain": "Turf",
       "distance": "Mile",
-      "venue": "Niigata"
+      "venue": "Niigata",
+      "fanGain": 3900
     },
     {
       "id": 2136,
@@ -1222,7 +1279,8 @@
       "type": "G3",
       "terrain": "Turf",
       "distance": "Sprint",
-      "venue": "Sapporo"
+      "venue": "Sapporo",
+      "fanGain": 4100
     },
     {
       "id": 2139,
@@ -1231,7 +1289,8 @@
       "type": "G3",
       "terrain": "Turf",
       "distance": "Sprint",
-      "venue": "Kokura"
+      "venue": "Kokura",
+      "fanGain": 3900
     },
     {
       "id": 2140,
@@ -1258,7 +1317,8 @@
       "type": "G2",
       "terrain": "Turf",
       "distance": "Medium",
-      "venue": "Sapporo"
+      "venue": "Sapporo",
+      "fanGain": 7000
     },
     {
       "id": 2143,
@@ -1276,7 +1336,8 @@
       "type": "G2",
       "terrain": "Turf",
       "distance": "Sprint",
-      "venue": "Hanshin"
+      "venue": "Hanshin",
+      "fanGain": 5900
     },
     {
       "id": 2145,
@@ -1294,7 +1355,8 @@
       "type": "G3",
       "terrain": "Turf",
       "distance": "Mile",
-      "venue": "Nakayama"
+      "venue": "Nakayama",
+      "fanGain": 3900
     },
     {
       "id": 2147,
@@ -1303,7 +1365,8 @@
       "type": "G3",
       "terrain": "Turf",
       "distance": "Medium",
-      "venue": "Niigata"
+      "venue": "Niigata",
+      "fanGain": 4100
     },
     {
       "id": 2148,
@@ -1330,7 +1393,8 @@
       "type": "G2",
       "terrain": "Turf",
       "distance": "Mile",
-      "venue": "Hanshin"
+      "venue": "Hanshin",
+      "fanGain": 5200
     },
     {
       "id": 2151,
@@ -1339,7 +1403,8 @@
       "type": "G3",
       "terrain": "Turf",
       "distance": "Medium",
-      "venue": "Nakayama"
+      "venue": "Nakayama",
+      "fanGain": 3500
     },
     {
       "id": 2152,
@@ -1357,7 +1422,8 @@
       "type": "G2",
       "terrain": "Turf",
       "distance": "Medium",
-      "venue": "Nakayama"
+      "venue": "Nakayama",
+      "fanGain": 6700
     },
     {
       "id": 2154,
@@ -1366,7 +1432,8 @@
       "type": "G2",
       "terrain": "Turf",
       "distance": "Medium",
-      "venue": "Hanshin"
+      "venue": "Hanshin",
+      "fanGain": 5400
     },
     {
       "id": 2155,
@@ -1393,7 +1460,8 @@
       "type": "G3",
       "terrain": "Dirt",
       "distance": "Medium",
-      "venue": "Hanshin"
+      "venue": "Hanshin",
+      "fanGain": 3600
     },
     {
       "id": 2158,
@@ -1402,7 +1470,8 @@
       "type": "G1",
       "terrain": "Turf",
       "distance": "Sprint",
-      "venue": "Nakayama"
+      "venue": "Nakayama",
+      "fanGain": 13000
     },
     {
       "id": 2159,
@@ -1411,7 +1480,8 @@
       "type": "G2",
       "terrain": "Turf",
       "distance": "Medium",
-      "venue": "Nakayama"
+      "venue": "Nakayama",
+      "fanGain": 5400
     },
     {
       "id": 2160,
@@ -1420,7 +1490,8 @@
       "type": "G2",
       "terrain": "Turf",
       "distance": "Mile",
-      "venue": "Tokyo"
+      "venue": "Tokyo",
+      "fanGain": 5500
     },
     {
       "id": 2161,
@@ -1438,7 +1509,8 @@
       "type": "G2",
       "terrain": "Turf",
       "distance": "Medium",
-      "venue": "Kyoto"
+      "venue": "Kyoto",
+      "fanGain": 6700
     },
     {
       "id": 2163,
@@ -1447,7 +1519,8 @@
       "type": "G2",
       "terrain": "Turf",
       "distance": "Mile",
-      "venue": "Tokyo"
+      "venue": "Tokyo",
+      "fanGain": 6700
     },
     {
       "id": 2164,
@@ -1510,7 +1583,8 @@
       "type": "G2",
       "terrain": "Turf",
       "distance": "Mile",
-      "venue": "Tokyo"
+      "venue": "Tokyo",
+      "fanGain": 5900
     },
     {
       "id": 2171,
@@ -1519,7 +1593,8 @@
       "type": "G1",
       "terrain": "Turf",
       "distance": "Long",
-      "venue": "Kyoto"
+      "venue": "Kyoto",
+      "fanGain": 12000
     },
     {
       "id": 2172,
@@ -1546,7 +1621,8 @@
       "type": "G1",
       "terrain": "Turf",
       "distance": "Medium",
-      "venue": "Kyoto"
+      "venue": "Kyoto",
+      "fanGain": 10000
     },
     {
       "id": 2175,
@@ -1555,7 +1631,8 @@
       "type": "G2",
       "terrain": "Turf",
       "distance": "Sprint",
-      "venue": "Kyoto"
+      "venue": "Kyoto",
+      "fanGain": 5900
     },
     {
       "id": 2176,
@@ -1564,7 +1641,8 @@
       "type": "G1",
       "terrain": "Turf",
       "distance": "Medium",
-      "venue": "Tokyo"
+      "venue": "Tokyo",
+      "fanGain": 15000
     },
     {
       "id": 2177,
@@ -1573,7 +1651,8 @@
       "type": "G2",
       "terrain": "Turf",
       "distance": "Long",
-      "venue": "Tokyo"
+      "venue": "Tokyo",
+      "fanGain": 5700
     },
     {
       "id": 2178,
@@ -1582,7 +1661,8 @@
       "type": "G3",
       "terrain": "Turf",
       "distance": "Medium",
-      "venue": "Fukushima"
+      "venue": "Fukushima",
+      "fanGain": 4100
     },
     {
       "id": 2179,
@@ -1591,7 +1671,8 @@
       "type": "G1",
       "terrain": "Dirt",
       "distance": "Medium",
-      "venue": "Ooi"
+      "venue": "Ooi",
+      "fanGain": 8000
     },
     {
       "id": 2180,
@@ -1609,7 +1690,8 @@
       "type": "G1",
       "terrain": "Dirt",
       "distance": "Sprint",
-      "venue": "Ooi"
+      "venue": "Ooi",
+      "fanGain": 6000
     },
     {
       "id": 2182,
@@ -1618,7 +1700,8 @@
       "type": "G3",
       "terrain": "Dirt",
       "distance": "Mile",
-      "venue": "Kyoto"
+      "venue": "Kyoto",
+      "fanGain": 3800
     },
     {
       "id": 2183,
@@ -1627,7 +1710,8 @@
       "type": "G3",
       "terrain": "Dirt",
       "distance": "Mile",
-      "venue": "Tokyo"
+      "venue": "Tokyo",
+      "fanGain": 3800
     },
     {
       "id": 2184,
@@ -1645,7 +1729,8 @@
       "type": "G1",
       "terrain": "Turf",
       "distance": "Medium",
-      "venue": "Kyoto"
+      "venue": "Kyoto",
+      "fanGain": 10500
     },
     {
       "id": 2186,
@@ -1690,7 +1775,8 @@
       "type": "G1",
       "terrain": "Turf",
       "distance": "Medium",
-      "venue": "Tokyo"
+      "venue": "Tokyo",
+      "fanGain": 30000
     },
     {
       "id": 2191,
@@ -1699,7 +1785,8 @@
       "type": "G3",
       "terrain": "Turf",
       "distance": "Sprint",
-      "venue": "Kyoto"
+      "venue": "Kyoto",
+      "fanGain": 3900
     },
     {
       "id": 2192,
@@ -1708,7 +1795,8 @@
       "type": "G1",
       "terrain": "Turf",
       "distance": "Mile",
-      "venue": "Kyoto"
+      "venue": "Kyoto",
+      "fanGain": 11000
     },
     {
       "id": 2193,
@@ -1726,7 +1814,8 @@
       "type": "G3",
       "terrain": "Dirt",
       "distance": "Sprint",
-      "venue": "Nakayama"
+      "venue": "Nakayama",
+      "fanGain": 3600
     },
     {
       "id": 2195,
@@ -1735,7 +1824,8 @@
       "type": "G3",
       "terrain": "Turf",
       "distance": "Medium",
-      "venue": "Hanshin"
+      "venue": "Hanshin",
+      "fanGain": 4100
     },
     {
       "id": 2196,
@@ -1744,7 +1834,8 @@
       "type": "G1",
       "terrain": "Dirt",
       "distance": "Mile",
-      "venue": "Chukyo"
+      "venue": "Chukyo",
+      "fanGain": 10000
     },
     {
       "id": 2197,
@@ -1753,7 +1844,8 @@
       "type": "G3",
       "terrain": "Turf",
       "distance": "Medium",
-      "venue": "Chukyo"
+      "venue": "Chukyo",
+      "fanGain": 4100
     },
     {
       "id": 2198,
@@ -1798,7 +1890,8 @@
       "type": "G2",
       "terrain": "Turf",
       "distance": "Long",
-      "venue": "Nakayama"
+      "venue": "Nakayama",
+      "fanGain": 6200
     },
     {
       "id": 2203,
@@ -1816,7 +1909,8 @@
       "type": "G3",
       "terrain": "Turf",
       "distance": "Mile",
-      "venue": "Nakayama"
+      "venue": "Nakayama",
+      "fanGain": 3600
     },
     {
       "id": 2205,
@@ -1825,7 +1919,8 @@
       "type": "G1",
       "terrain": "Turf",
       "distance": "Long",
-      "venue": "Nakayama"
+      "venue": "Nakayama",
+      "fanGain": 30000
     },
     {
       "id": 2206,
@@ -1852,7 +1947,8 @@
       "type": "G2",
       "terrain": "Turf",
       "distance": "Sprint",
-      "venue": "Hanshin"
+      "venue": "Hanshin",
+      "fanGain": 6700
     },
     {
       "id": 2209,
@@ -1861,7 +1957,8 @@
       "type": "G1",
       "terrain": "Dirt",
       "distance": "Medium",
-      "venue": "Ooi"
+      "venue": "Ooi",
+      "fanGain": 8000
     },
     {
       "id": 2210,
@@ -1870,7 +1967,8 @@
       "type": "G3",
       "terrain": "Turf",
       "distance": "Medium",
-      "venue": "Chukyo"
+      "venue": "Chukyo",
+      "fanGain": 3600
     },
     {
       "id": 2211,
@@ -1897,7 +1995,8 @@
       "type": "G3",
       "terrain": "Turf",
       "distance": "Mile",
-      "venue": "Kyoto"
+      "venue": "Kyoto",
+      "fanGain": 4100
     },
     {
       "id": 2214,
@@ -1915,7 +2014,8 @@
       "type": "G3",
       "terrain": "Turf",
       "distance": "Medium",
-      "venue": "Nakayama"
+      "venue": "Nakayama",
+      "fanGain": 4100
     },
     {
       "id": 2216,
@@ -1933,7 +2033,8 @@
       "type": "G2",
       "terrain": "Turf",
       "distance": "Medium",
-      "venue": "Kyoto"
+      "venue": "Kyoto",
+      "fanGain": 5700
     },
     {
       "id": 2218,
@@ -1960,7 +2061,8 @@
       "type": "G2",
       "terrain": "Turf",
       "distance": "Medium",
-      "venue": "Nakayama"
+      "venue": "Nakayama",
+      "fanGain": 6200
     },
     {
       "id": 2221,
@@ -1969,7 +2071,8 @@
       "type": "G3",
       "terrain": "Dirt",
       "distance": "Sprint",
-      "venue": "Tokyo"
+      "venue": "Tokyo",
+      "fanGain": 3800
     },
     {
       "id": 2222,
@@ -1978,7 +2081,8 @@
       "type": "OP",
       "terrain": "Turf",
       "distance": "Medium",
-      "venue": "Tokyo"
+      "venue": "Tokyo",
+      "fanGain": 5900
     },
     {
       "id": 2223,
@@ -1987,7 +2091,8 @@
       "type": "G3",
       "terrain": "Turf",
       "distance": "Sprint",
-      "venue": "Kyoto"
+      "venue": "Kyoto",
+      "fanGain": 3900
     },
     {
       "id": 2224,
@@ -2005,7 +2110,8 @@
       "type": "G2",
       "terrain": "Dirt",
       "distance": "Mile",
-      "venue": "Chukyo"
+      "venue": "Chukyo",
+      "fanGain": 5500
     },
     {
       "id": 2226,
@@ -2023,7 +2129,8 @@
       "type": "G2",
       "terrain": "Turf",
       "distance": "Medium",
-      "venue": "Kyoto"
+      "venue": "Kyoto",
+      "fanGain": 6200
     },
     {
       "id": 2228,
@@ -2041,7 +2148,8 @@
       "type": "G3",
       "terrain": "Turf",
       "distance": "Mile",
-      "venue": "Tokyo"
+      "venue": "Tokyo",
+      "fanGain": 3900
     },
     {
       "id": 2230,
@@ -2068,7 +2176,8 @@
       "type": "G3",
       "terrain": "Turf",
       "distance": "Long",
-      "venue": "Tokyo"
+      "venue": "Tokyo",
+      "fanGain": 4100
     },
     {
       "id": 2233,
@@ -2077,7 +2186,8 @@
       "type": "G1",
       "terrain": "Dirt",
       "distance": "Mile",
-      "venue": "Tokyo"
+      "venue": "Tokyo",
+      "fanGain": 10000
     },
     {
       "id": 2234,
@@ -2086,7 +2196,8 @@
       "type": "G3",
       "terrain": "Turf",
       "distance": "Sprint",
-      "venue": "Hanshin"
+      "venue": "Hanshin",
+      "fanGain": 4100
     },
     {
       "id": 2235,
@@ -2104,7 +2215,8 @@
       "type": "G3",
       "terrain": "Turf",
       "distance": "Mile",
-      "venue": "Kokura"
+      "venue": "Kokura",
+      "fanGain": 4100
     },
     {
       "id": 2237,
@@ -2113,7 +2225,8 @@
       "type": "G3",
       "terrain": "Turf",
       "distance": "Sprint",
-      "venue": "Kyoto"
+      "venue": "Kyoto",
+      "fanGain": 3600
     },
     {
       "id": 2238,
@@ -2122,7 +2235,8 @@
       "type": "G2",
       "terrain": "Turf",
       "distance": "Mile",
-      "venue": "Nakayama"
+      "venue": "Nakayama",
+      "fanGain": 6700
     },
     {
       "id": 2239,
@@ -2140,7 +2254,8 @@
       "type": "G2",
       "terrain": "Turf",
       "distance": "Medium",
-      "venue": "Chukyo"
+      "venue": "Chukyo",
+      "fanGain": 6700
     },
     {
       "id": 2241,
@@ -2158,7 +2273,8 @@
       "type": "G3",
       "terrain": "Turf",
       "distance": "Mile",
-      "venue": "Nakayama"
+      "venue": "Nakayama",
+      "fanGain": 3600
     },
     {
       "id": 2243,
@@ -2176,7 +2292,8 @@
       "type": "G3",
       "terrain": "Turf",
       "distance": "Sprint",
-      "venue": "Nakayama"
+      "venue": "Nakayama",
+      "fanGain": 4100
     },
     {
       "id": 2245,
@@ -2212,7 +2329,8 @@
       "type": "G2",
       "terrain": "Turf",
       "distance": "Long",
-      "venue": "Hanshin"
+      "venue": "Hanshin",
+      "fanGain": 6700
     },
     {
       "id": 2249,
@@ -2221,7 +2339,8 @@
       "type": "G3",
       "terrain": "Dirt",
       "distance": "Mile",
-      "venue": "Nakayama"
+      "venue": "Nakayama",
+      "fanGain": 3600
     },
     {
       "id": 2250,
@@ -2230,7 +2349,8 @@
       "type": "G2",
       "terrain": "Turf",
       "distance": "Long",
-      "venue": "Nakayama"
+      "venue": "Nakayama",
+      "fanGain": 6700
     },
     {
       "id": 2251,
@@ -2239,7 +2359,8 @@
       "type": "G1",
       "terrain": "Turf",
       "distance": "Medium",
-      "venue": "Hanshin"
+      "venue": "Hanshin",
+      "fanGain": 13500
     },
     {
       "id": 2252,
@@ -2257,7 +2378,8 @@
       "type": "G1",
       "terrain": "Turf",
       "distance": "Sprint",
-      "venue": "Chukyo"
+      "venue": "Chukyo",
+      "fanGain": 13000
     },
     {
       "id": 2254,
@@ -2266,7 +2388,8 @@
       "type": "G3",
       "terrain": "Dirt",
       "distance": "Mile",
-      "venue": "Hanshin"
+      "venue": "Hanshin",
+      "fanGain": 3600
     },
     {
       "id": 2255,
@@ -2275,7 +2398,8 @@
       "type": "OP",
       "terrain": "Dirt",
       "distance": "Mile",
-      "venue": "Fukushima"
+      "venue": "Fukushima",
+      "fanGain": 5900
     },
     {
       "id": 2256,
@@ -2302,7 +2426,8 @@
       "type": "G2",
       "terrain": "Turf",
       "distance": "Mile",
-      "venue": "Hanshin"
+      "venue": "Hanshin",
+      "fanGain": 5500
     },
     {
       "id": 2259,
@@ -2320,7 +2445,8 @@
       "type": "G3",
       "terrain": "Turf",
       "distance": "Mile",
-      "venue": "Nakayama"
+      "venue": "Nakayama",
+      "fanGain": 3900
     },
     {
       "id": 2261,
@@ -2338,7 +2464,8 @@
       "type": "G3",
       "terrain": "Turf",
       "distance": "Mile",
-      "venue": "Fukushima"
+      "venue": "Fukushima",
+      "fanGain": 3800
     },
     {
       "id": 2263,
@@ -2347,7 +2474,8 @@
       "type": "G2",
       "terrain": "Turf",
       "distance": "Mile",
-      "venue": "Kyoto"
+      "venue": "Kyoto",
+      "fanGain": 5900
     },
     {
       "id": 2264,
@@ -2365,7 +2493,8 @@
       "type": "G1",
       "terrain": "Turf",
       "distance": "Long",
-      "venue": "Kyoto"
+      "venue": "Kyoto",
+      "fanGain": 15000
     },
     {
       "id": 2266,
@@ -2392,7 +2521,8 @@
       "type": "G2",
       "terrain": "Turf",
       "distance": "Sprint",
-      "venue": "Tokyo"
+      "venue": "Tokyo",
+      "fanGain": 5900
     },
     {
       "id": 2269,
@@ -2428,7 +2558,8 @@
       "type": "G3",
       "terrain": "Turf",
       "distance": "Medium",
-      "venue": "Niigata"
+      "venue": "Niigata",
+      "fanGain": 4100
     },
     {
       "id": 2273,
@@ -2455,7 +2586,8 @@
       "type": "G1",
       "terrain": "Turf",
       "distance": "Mile",
-      "venue": "Tokyo"
+      "venue": "Tokyo",
+      "fanGain": 10500
     },
     {
       "id": 2276,
@@ -2473,7 +2605,8 @@
       "type": "G3",
       "terrain": "Dirt",
       "distance": "Medium",
-      "venue": "Kyoto"
+      "venue": "Kyoto",
+      "fanGain": 3600
     },
     {
       "id": 2278,
@@ -2509,7 +2642,8 @@
       "type": "G2",
       "terrain": "Turf",
       "distance": "Long",
-      "venue": "Tokyo"
+      "venue": "Tokyo",
+      "fanGain": 5700
     },
     {
       "id": 2282,
@@ -2518,7 +2652,8 @@
       "type": "G3",
       "terrain": "Turf",
       "distance": "Mile",
-      "venue": "Tokyo"
+      "venue": "Tokyo",
+      "fanGain": 4100
     },
     {
       "id": 2283,
@@ -2527,7 +2662,8 @@
       "type": "G3",
       "terrain": "Turf",
       "distance": "Medium",
-      "venue": "Hanshin"
+      "venue": "Hanshin",
+      "fanGain": 3600
     },
     {
       "id": 2284,
@@ -2536,7 +2672,8 @@
       "type": "G3",
       "terrain": "Turf",
       "distance": "Medium",
-      "venue": "Hanshin"
+      "venue": "Hanshin",
+      "fanGain": 4100
     },
     {
       "id": 2285,
@@ -2563,7 +2700,8 @@
       "type": "G1",
       "terrain": "Turf",
       "distance": "Mile",
-      "venue": "Tokyo"
+      "venue": "Tokyo",
+      "fanGain": 13000
     },
     {
       "id": 2288,
@@ -2581,7 +2719,8 @@
       "type": "G3",
       "terrain": "Turf",
       "distance": "Sprint",
-      "venue": "Hakodate"
+      "venue": "Hakodate",
+      "fanGain": 3900
     },
     {
       "id": 2290,
@@ -2617,7 +2756,8 @@
       "type": "G1",
       "terrain": "Turf",
       "distance": "Medium",
-      "venue": "Hanshin"
+      "venue": "Hanshin",
+      "fanGain": 15000
     },
     {
       "id": 2294,
@@ -2626,7 +2766,8 @@
       "type": "G1",
       "terrain": "Dirt",
       "distance": "Medium",
-      "venue": "Ooi"
+      "venue": "Ooi",
+      "fanGain": 6000
     },
     {
       "id": 2295,
@@ -2644,7 +2785,8 @@
       "type": "G3",
       "terrain": "Turf",
       "distance": "Sprint",
-      "venue": "Chukyo"
+      "venue": "Chukyo",
+      "fanGain": 3900
     },
     {
       "id": 2297,
@@ -2653,7 +2795,8 @@
       "type": "G3",
       "terrain": "Turf",
       "distance": "Medium",
-      "venue": "Hakodate"
+      "venue": "Hakodate",
+      "fanGain": 4100
     },
     {
       "id": 2298,
@@ -2680,7 +2823,8 @@
       "type": "G3",
       "terrain": "Dirt",
       "distance": "Sprint",
-      "venue": "Chukyo"
+      "venue": "Chukyo",
+      "fanGain": 3600
     },
     {
       "id": 2301,
@@ -2689,7 +2833,8 @@
       "type": "G3",
       "terrain": "Turf",
       "distance": "Medium",
-      "venue": "Fukushima"
+      "venue": "Fukushima",
+      "fanGain": 4100
     },
     {
       "id": 2302,
@@ -2707,7 +2852,8 @@
       "type": "G3",
       "terrain": "Turf",
       "distance": "Mile",
-      "venue": "Chukyo"
+      "venue": "Chukyo",
+      "fanGain": 3900
     },
     {
       "id": 2304,
@@ -2725,7 +2871,8 @@
       "type": "G3",
       "terrain": "Turf",
       "distance": "Sprint",
-      "venue": "Niigata"
+      "venue": "Niigata",
+      "fanGain": 3900
     },
     {
       "id": 2306,
@@ -2734,7 +2881,8 @@
       "type": "G3",
       "terrain": "Turf",
       "distance": "Mile",
-      "venue": "Sapporo"
+      "venue": "Sapporo",
+      "fanGain": 3600
     },
     {
       "id": 2307,
@@ -2752,7 +2900,8 @@
       "type": "G3",
       "terrain": "Dirt",
       "distance": "Mile",
-      "venue": "Sapporo"
+      "venue": "Sapporo",
+      "fanGain": 3600
     },
     {
       "id": 2309,
@@ -2770,7 +2919,8 @@
       "type": "G3",
       "terrain": "Turf",
       "distance": "Medium",
-      "venue": "Kokura"
+      "venue": "Kokura",
+      "fanGain": 4100
     },
     {
       "id": 2311,
@@ -2788,7 +2938,8 @@
       "type": "G3",
       "terrain": "Turf",
       "distance": "Mile",
-      "venue": "Niigata"
+      "venue": "Niigata",
+      "fanGain": 3900
     },
     {
       "id": 2313,
@@ -2815,7 +2966,8 @@
       "type": "G3",
       "terrain": "Turf",
       "distance": "Sprint",
-      "venue": "Sapporo"
+      "venue": "Sapporo",
+      "fanGain": 4100
     },
     {
       "id": 2316,
@@ -2824,7 +2976,8 @@
       "type": "G3",
       "terrain": "Turf",
       "distance": "Sprint",
-      "venue": "Kokura"
+      "venue": "Kokura",
+      "fanGain": 3900
     },
     {
       "id": 2317,
@@ -2851,7 +3004,8 @@
       "type": "G2",
       "terrain": "Turf",
       "distance": "Medium",
-      "venue": "Sapporo"
+      "venue": "Sapporo",
+      "fanGain": 7000
     },
     {
       "id": 2320,
@@ -2869,7 +3023,8 @@
       "type": "G2",
       "terrain": "Turf",
       "distance": "Sprint",
-      "venue": "Hanshin"
+      "venue": "Hanshin",
+      "fanGain": 5900
     },
     {
       "id": 2322,
@@ -2887,7 +3042,8 @@
       "type": "G3",
       "terrain": "Turf",
       "distance": "Mile",
-      "venue": "Nakayama"
+      "venue": "Nakayama",
+      "fanGain": 3900
     },
     {
       "id": 2324,
@@ -2896,7 +3052,8 @@
       "type": "G3",
       "terrain": "Turf",
       "distance": "Medium",
-      "venue": "Niigata"
+      "venue": "Niigata",
+      "fanGain": 4100
     },
     {
       "id": 2325,
@@ -2932,7 +3089,8 @@
       "type": "G2",
       "terrain": "Turf",
       "distance": "Medium",
-      "venue": "Nakayama"
+      "venue": "Nakayama",
+      "fanGain": 6700
     },
     {
       "id": 2329,
@@ -2959,7 +3117,8 @@
       "type": "G3",
       "terrain": "Dirt",
       "distance": "Medium",
-      "venue": "Hanshin"
+      "venue": "Hanshin",
+      "fanGain": 3600
     },
     {
       "id": 2332,
@@ -2968,7 +3127,8 @@
       "type": "G1",
       "terrain": "Turf",
       "distance": "Sprint",
-      "venue": "Nakayama"
+      "venue": "Nakayama",
+      "fanGain": 13000
     },
     {
       "id": 2333,
@@ -2977,7 +3137,8 @@
       "type": "G2",
       "terrain": "Turf",
       "distance": "Mile",
-      "venue": "Tokyo"
+      "venue": "Tokyo",
+      "fanGain": 5500
     },
     {
       "id": 2334,
@@ -2995,7 +3156,8 @@
       "type": "G2",
       "terrain": "Turf",
       "distance": "Medium",
-      "venue": "Kyoto"
+      "venue": "Kyoto",
+      "fanGain": 6700
     },
     {
       "id": 2336,
@@ -3004,7 +3166,8 @@
       "type": "G2",
       "terrain": "Turf",
       "distance": "Mile",
-      "venue": "Tokyo"
+      "venue": "Tokyo",
+      "fanGain": 6700
     },
     {
       "id": 2337,
@@ -3067,7 +3230,8 @@
       "type": "G2",
       "terrain": "Turf",
       "distance": "Mile",
-      "venue": "Tokyo"
+      "venue": "Tokyo",
+      "fanGain": 5900
     },
     {
       "id": 2344,
@@ -3094,7 +3258,8 @@
       "type": "G2",
       "terrain": "Turf",
       "distance": "Sprint",
-      "venue": "Kyoto"
+      "venue": "Kyoto",
+      "fanGain": 5900
     },
     {
       "id": 2347,
@@ -3103,7 +3268,8 @@
       "type": "G1",
       "terrain": "Turf",
       "distance": "Medium",
-      "venue": "Tokyo"
+      "venue": "Tokyo",
+      "fanGain": 15000
     },
     {
       "id": 2348,
@@ -3112,7 +3278,8 @@
       "type": "G2",
       "terrain": "Turf",
       "distance": "Long",
-      "venue": "Tokyo"
+      "venue": "Tokyo",
+      "fanGain": 5700
     },
     {
       "id": 2349,
@@ -3121,7 +3288,8 @@
       "type": "G3",
       "terrain": "Turf",
       "distance": "Medium",
-      "venue": "Fukushima"
+      "venue": "Fukushima",
+      "fanGain": 4100
     },
     {
       "id": 2350,
@@ -3130,7 +3298,8 @@
       "type": "G1",
       "terrain": "Dirt",
       "distance": "Medium",
-      "venue": "Ooi"
+      "venue": "Ooi",
+      "fanGain": 8000
     },
     {
       "id": 2351,
@@ -3148,7 +3317,8 @@
       "type": "G1",
       "terrain": "Dirt",
       "distance": "Sprint",
-      "venue": "Ooi"
+      "venue": "Ooi",
+      "fanGain": 6000
     },
     {
       "id": 2353,
@@ -3157,7 +3327,8 @@
       "type": "G3",
       "terrain": "Dirt",
       "distance": "Mile",
-      "venue": "Kyoto"
+      "venue": "Kyoto",
+      "fanGain": 3800
     },
     {
       "id": 2354,
@@ -3166,7 +3337,8 @@
       "type": "G3",
       "terrain": "Dirt",
       "distance": "Mile",
-      "venue": "Tokyo"
+      "venue": "Tokyo",
+      "fanGain": 3800
     },
     {
       "id": 2355,
@@ -3184,7 +3356,8 @@
       "type": "G1",
       "terrain": "Turf",
       "distance": "Medium",
-      "venue": "Kyoto"
+      "venue": "Kyoto",
+      "fanGain": 10500
     },
     {
       "id": 2357,
@@ -3229,7 +3402,8 @@
       "type": "G1",
       "terrain": "Turf",
       "distance": "Medium",
-      "venue": "Tokyo"
+      "venue": "Tokyo",
+      "fanGain": 30000
     },
     {
       "id": 2362,
@@ -3238,7 +3412,8 @@
       "type": "G3",
       "terrain": "Turf",
       "distance": "Sprint",
-      "venue": "Kyoto"
+      "venue": "Kyoto",
+      "fanGain": 3900
     },
     {
       "id": 2363,
@@ -3247,7 +3422,8 @@
       "type": "G1",
       "terrain": "Turf",
       "distance": "Mile",
-      "venue": "Kyoto"
+      "venue": "Kyoto",
+      "fanGain": 11000
     },
     {
       "id": 2364,
@@ -3265,7 +3441,8 @@
       "type": "G3",
       "terrain": "Dirt",
       "distance": "Sprint",
-      "venue": "Nakayama"
+      "venue": "Nakayama",
+      "fanGain": 3600
     },
     {
       "id": 2366,
@@ -3274,7 +3451,8 @@
       "type": "G3",
       "terrain": "Turf",
       "distance": "Medium",
-      "venue": "Hanshin"
+      "venue": "Hanshin",
+      "fanGain": 4100
     },
     {
       "id": 2367,
@@ -3283,7 +3461,8 @@
       "type": "G1",
       "terrain": "Dirt",
       "distance": "Mile",
-      "venue": "Chukyo"
+      "venue": "Chukyo",
+      "fanGain": 10000
     },
     {
       "id": 2368,
@@ -3292,7 +3471,8 @@
       "type": "G3",
       "terrain": "Turf",
       "distance": "Medium",
-      "venue": "Chukyo"
+      "venue": "Chukyo",
+      "fanGain": 4100
     },
     {
       "id": 2369,
@@ -3337,7 +3517,8 @@
       "type": "G2",
       "terrain": "Turf",
       "distance": "Long",
-      "venue": "Nakayama"
+      "venue": "Nakayama",
+      "fanGain": 6200
     },
     {
       "id": 2374,
@@ -3355,7 +3536,8 @@
       "type": "G3",
       "terrain": "Turf",
       "distance": "Mile",
-      "venue": "Nakayama"
+      "venue": "Nakayama",
+      "fanGain": 3600
     },
     {
       "id": 2376,
@@ -3364,7 +3546,8 @@
       "type": "G1",
       "terrain": "Turf",
       "distance": "Long",
-      "venue": "Nakayama"
+      "venue": "Nakayama",
+      "fanGain": 30000
     },
     {
       "id": 2377,
@@ -3391,7 +3574,8 @@
       "type": "G2",
       "terrain": "Turf",
       "distance": "Sprint",
-      "venue": "Hanshin"
+      "venue": "Hanshin",
+      "fanGain": 6700
     },
     {
       "id": 2380,
@@ -3400,7 +3584,8 @@
       "type": "G1",
       "terrain": "Dirt",
       "distance": "Medium",
-      "venue": "Ooi"
+      "venue": "Ooi",
+      "fanGain": 8000
     }
   ]
 }

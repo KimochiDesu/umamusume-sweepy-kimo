@@ -8,6 +8,6 @@ def update_events_load_info(count: int) -> None:
     global events_load_info
     events_load_info = {
         "loaded": True,
-        "count": int(count),
+        "count": count,
         "timestamp": time.time(),
     }

@@ -1,8 +1,7 @@
 import cv2
-import time
 from typing import Dict, Any, Optional
 from bot.conn.u2_ctrl import U2AndroidController
-from bot.recog.image_matcher import image_match, compare_color_equal
+from bot.recog.image_matcher import image_match
 from bot.recog.ocr import ocr_line
 from bot.recog.energy_scanner import scan_base_energy
 from module.umamusume.asset import MOTIVATION_LIST
@@ -80,8 +79,8 @@ def read_mood(img: Optional[any] = None) -> Optional[int]:
     if top is None or top.size == 0:
         return None
     gray = cv2.cvtColor(top, cv2.COLOR_BGR2GRAY)
-    for i in range(len(MOTIVATION_LIST)):
-        res = image_match(gray, MOTIVATION_LIST[i])
+    for i, tmpl in enumerate(MOTIVATION_LIST):
+        res = image_match(gray, tmpl)
         if res.find_match:
             return i + 1
     return None
