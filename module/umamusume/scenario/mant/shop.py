@@ -427,14 +427,24 @@ def scan_mant_shop(ctx):
     from bot.recog.image_matcher import image_match
     from module.umamusume.asset.template import REF_SHOP_MANT_CHECK
 
+    log.info(f"Opening MANT shop at coordinates ({shop_x}, {SHOP_OPEN_Y})")
     ctx.ctrl.click(shop_x, SHOP_OPEN_Y, "MANT shop open")
     deadline = time.time() + 2.0
+    shop_detected = False
     while time.time() < deadline:
         img_check = ctx.ctrl.get_screen(to_gray=True)
-        if image_match(img_check, REF_SHOP_MANT_CHECK).find_match:
+        match_result = image_match(img_check, REF_SHOP_MANT_CHECK)
+        if match_result.find_match:
+            log.info(f"Shop detected successfully (accuracy: {match_result.match_accuracy:.2f})")
+            shop_detected = True
             break
         time.sleep(0.17)
-    else:
+
+    if not shop_detected:
+        # Shop detection failed - close it before returning
+        log.warning("Shop detection failed after 2s timeout - closing shop and returning None")
+        ctx.ctrl.click(BACK_BTN_X, BACK_BTN_Y, "Close shop (detection failed)")
+        time.sleep(0.8)
         return None
 
     scroll_to_top(ctx)
