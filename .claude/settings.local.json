@@ -19,7 +19,9 @@
       "Bash(git fetch:*)",
       "Bash(git add:*)",
       "Bash(git commit:*)",
-      "Bash(if exist nul del nul)"
+      "Bash(if exist nul del nul)",
+      "Bash(git rm:*)",
+      "Bash(python:*)"
     ]
   }
 }

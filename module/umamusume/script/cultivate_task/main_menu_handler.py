@@ -100,6 +100,16 @@ def script_cultivate_main_menu(ctx: UmamusumeContext):
         except Exception as e:
             log.debug(f"Checkpoint save failed: {e}")
 
+        # Check if we just came back from a race and should scan shop
+        if is_mant(ctx) and getattr(ctx.cultivate_detail, 'mant_post_race_shop_check', False):
+            ctx.cultivate_detail.mant_post_race_shop_check = False
+            log.info("Post-race shop check triggered - scanning and buying items")
+            from module.umamusume.scenario.mant.main_menu import handle_mant_shop_scan
+            try:
+                handle_mant_shop_scan(ctx, current_date, force_scan=True)
+            except Exception as e:
+                log.warning(f"Post-race shop scan failed: {e}")
+
     cached_races = getattr(ctx.cultivate_detail.turn_info, 'cached_available_races', None)
     if cached_races is None:
         from module.umamusume.asset.race_data import get_races_for_period

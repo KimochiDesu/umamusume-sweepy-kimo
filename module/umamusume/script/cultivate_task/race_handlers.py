@@ -355,3 +355,6 @@ def script_cultivate_race_result(ctx: UmamusumeContext):
 
 def script_cultivate_race_reward(ctx: UmamusumeContext):
     ctx.ctrl.click_by_point(RACE_REWARD_CONFIRM)
+
+    # Mark that we should check shop after returning to main menu
+    ctx.cultivate_detail.mant_post_race_shop_check = True

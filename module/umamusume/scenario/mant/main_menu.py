@@ -110,8 +110,8 @@ def handle_mant_turn_start(ctx, current_date):
         log_detected_shop_items([(name, turns, not bought) for name, _, _, turns, bought in updated])
 
 
-def handle_mant_shop_scan(ctx, current_date):
-    if ctx.cultivate_detail.mant_shop_scanned_this_turn:
+def handle_mant_shop_scan(ctx, current_date, force_scan=False):
+    if ctx.cultivate_detail.mant_shop_scanned_this_turn and not force_scan:
         log.debug(f"handle_mant_shop_scan: already scanned this turn")
         return False
     if getattr(ctx.cultivate_detail, 'mant_shop_handled_this_turn', False):
@@ -122,16 +122,16 @@ def handle_mant_shop_scan(ctx, current_date):
         current_shop_chunk
     )
     from module.umamusume.scenario.mant.constants import AILMENT_CURE_MAP, AILMENT_CURE_ALL
-    if not is_shop_scan_turn(current_date):
+    if not is_shop_scan_turn(current_date) and not force_scan:
         log.debug(f"handle_mant_shop_scan: not a shop scan turn (date={current_date})")
         return False
 
     # Check if we should force a rescan (e.g., after a race that might have added new items)
-    force_rescan = getattr(ctx.cultivate_detail, 'mant_force_shop_rescan', False)
+    force_rescan = getattr(ctx.cultivate_detail, 'mant_force_shop_rescan', False) or force_scan
 
     chunk = current_shop_chunk(current_date)
     last_chunk = getattr(ctx.cultivate_detail, 'mant_shop_last_chunk', -1)
-    log.debug(f"handle_mant_shop_scan: chunk={chunk}, last_chunk={last_chunk}, force_rescan={force_rescan}")
+    log.debug(f"handle_mant_shop_scan: chunk={chunk}, last_chunk={last_chunk}, force_rescan={force_rescan}, force_scan={force_scan}")
     if chunk == last_chunk and not force_rescan:
         log.debug(f"handle_mant_shop_scan: chunk already scanned and no forced rescan")
         return False
@@ -156,6 +156,8 @@ def handle_mant_shop_scan(ctx, current_date):
     log_detected_shop_items([(name, turns, not bought) for name, _, _, turns, bought in items_list])
 
     bought_any = False
+    coaching_megaphone_forced = False
+    coaching_megaphone_name = "Coaching Megaphone"
     mant_cfg = getattr(ctx.task.detail.scenario_config, 'mant_config', None)
     log.info(f"Shop scan: mant_cfg={mant_cfg is not None}, has_tiers={mant_cfg.item_tiers if mant_cfg else None}")
     if mant_cfg and mant_cfg.item_tiers:
@@ -238,8 +240,6 @@ def handle_mant_shop_scan(ctx, current_date):
         # On first-ever shop turn (chunk 0, never seen before), ensure Coaching Megaphone
         # is bought if not already covered by tier config
         is_first_shop_turn = (chunk == 0 and last_chunk == -1)
-        coaching_megaphone_name = "Coaching Megaphone"
-        coaching_megaphone_forced = False
         if is_first_shop_turn and coaching_megaphone_name in shop_available:
             coaching_in_tiers = False
             if mant_cfg and mant_cfg.item_tiers:
