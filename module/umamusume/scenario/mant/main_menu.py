@@ -384,8 +384,6 @@ def handle_mant_shop_scan(ctx, current_date):
                 remaining = [(name, turns, not bought) for name, _, _, turns, bought in items_list
                              if not bought and name not in bought_set]
                 log_detected_shop_items(remaining)
-        else:
-            log.info("Shop scan: no targets selected for purchase")
 
                 # --- Post-purchase verification ---
                 # Scan inventory fresh (stale data from before shop visit is useless)
@@ -444,8 +442,10 @@ def handle_mant_shop_scan(ctx, current_date):
                     close_items_panel(ctx)
                 else:
                     log.warning("First shop turn: could not open items panel to use megaphone")
+        else:
+            log.info("Shop scan: no targets selected for purchase")
 
-    if not bought:
+    if not bought_any:
         from module.umamusume.scenario.mant.shop import BACK_BTN_X, BACK_BTN_Y
         import time as t
         ctx.ctrl.click(BACK_BTN_X, BACK_BTN_Y)
