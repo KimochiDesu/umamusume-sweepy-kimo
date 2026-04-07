@@ -6,9 +6,6 @@ from pathlib import Path
 TEMPLATE_DIR = Path("resource/umamusume/trainingIcons")
 BAKED_PATH = Path("resource/umamusume/trainingIcons.pkl")
 
-QUAD_WEIGHTS = (1.5, 1.5, 0.5, 0.5)
-RAD_TO_DEG = 180.0 / np.pi
-
 
 def has_portrait_circle(roi, circle_cx, circle_cy, circle_r):
     gray = cv2.cvtColor(roi, cv2.COLOR_BGR2GRAY)
@@ -79,8 +76,9 @@ def compute_features(img_bgr):
     hist(lab, 0, 12, [0, 256], mask_full)
     hist(lab, 1, 12, [0, 256], mask_full)
     hist(lab, 2, 12, [0, 256], mask_full)
+    quad_weights = [1.5, 1.5, 0.5, 0.5]
     for qi, (x1, y1, x2, y2) in enumerate(quadrants):
-        w = QUAD_WEIGHTS[qi]
+        w = quad_weights[qi]
         mask_q = np.zeros((sz, sz), dtype=np.uint8)
         mask_q[y1:y2, x1:x2] = mask_full[y1:y2, x1:x2]
         hist(hsv, 0, 20, [0, 180], mask_q, w)
@@ -106,7 +104,7 @@ def compute_features(img_bgr):
     gx = cv2.Sobel(gray, cv2.CV_32F, 1, 0, ksize=3)
     gy = cv2.Sobel(gray, cv2.CV_32F, 0, 1, ksize=3)
     mag = np.sqrt(gx ** 2 + gy ** 2)
-    angle = (np.arctan2(gy, gx) * RAD_TO_DEG + 180) % 360
+    angle = (np.arctan2(gy, gx) * 180 / np.pi + 180) % 360
     for mask_r, n_bins, w in [(mask_hair, 18, 3.0), (mask_full, 18, 1.0), (mask_face, 12, 1.5)]:
         mb = mask_r > 0
         mg, ag = mag[mb], angle[mb]

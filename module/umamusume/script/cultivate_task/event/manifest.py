@@ -1,5 +1,7 @@
 from typing import Union
+import requests
 import re
+import time
 import json
 import os
 import unicodedata
@@ -15,17 +17,6 @@ from bot.server.events_state import update_events_load_info
 from rapidfuzz import process, fuzz
 
 log = logger.get_logger(__name__)
-
-
-def _normalize_string(text: str) -> str:
-    if not text:
-        return ""
-    t = unicodedata.normalize('NFKD', str(text))
-    t = t.lower().strip()
-    t = re.sub(r"[^a-z0-9]+", " ", t)
-    t = " ".join(t.split())
-    return t
-
 
 event_map: dict[str, Union[callable, int]] = {
     "": 5,
@@ -93,7 +84,16 @@ def get_local_event_choice(ctx: UmamusumeContext, event_name: str) -> Union[int,
     if event_name in events_db:
         return calculate_optimal_choice_from_db(ctx, events_db[event_name])
 
-    query = _normalize_string(event_name)
+    def normalizeString(text: str) -> str:
+        if not text:
+            return ""
+        t = unicodedata.normalize('NFKD', str(text))
+        t = t.lower().strip()
+        t = re.sub(r"[^a-z0-9]+", " ", t)
+        t = " ".join(t.split())
+        return t
+
+    query = normalizeString(event_name)
 
     norm_map = getattr(get_local_event_choice, "cacheNormalizedKeyMap", None)
     if norm_map and query in norm_map:
@@ -108,7 +108,7 @@ def get_local_event_choice(ctx: UmamusumeContext, event_name: str) -> Union[int,
         norm_map = {}
         normalized_choices = []
         for original_key in events_db.keys():
-            normalized_key = _normalize_string(original_key)
+            normalized_key = normalizeString(original_key)
             if normalized_key:
                 norm_map[normalized_key] = original_key
                 normalized_choices.append(normalized_key)
@@ -158,7 +158,16 @@ def get_local_event_choice_with_count(ctx: UmamusumeContext, event_name: str):
     if event_name in events_db:
         return _resolve(event_name)
 
-    query = _normalize_string(event_name)
+    def normalizeString(text: str) -> str:
+        if not text:
+            return ""
+        t = unicodedata.normalize('NFKD', str(text))
+        t = t.lower().strip()
+        t = re.sub(r"[^a-z0-9]+", " ", t)
+        t = " ".join(t.split())
+        return t
+
+    query = normalizeString(event_name)
 
     norm_map = getattr(get_local_event_choice, "cacheNormalizedKeyMap", None)
     if norm_map and query in norm_map:
@@ -171,7 +180,7 @@ def get_local_event_choice_with_count(ctx: UmamusumeContext, event_name: str):
         norm_map = {}
         normalized_choices = []
         for original_key in events_db.keys():
-            normalized_key = _normalize_string(original_key)
+            normalized_key = normalizeString(original_key)
             if normalized_key:
                 norm_map[normalized_key] = original_key
                 normalized_choices.append(normalized_key)
@@ -210,10 +219,19 @@ def warmup_event_index():
     if not events_db:
         return False
 
+    def normalizeString(text: str) -> str:
+        if not text:
+            return ""
+        t = unicodedata.normalize('NFKD', str(text))
+        t = t.lower().strip()
+        t = re.sub(r"[^a-z0-9]+", " ", t)
+        t = " ".join(t.split())
+        return t
+
     norm_map = {}
     normalized_choices = []
     for original_key in events_db.keys():
-        normalized_key = _normalize_string(original_key)
+        normalized_key = normalizeString(original_key)
         if normalized_key:
             norm_map[normalized_key] = original_key
             normalized_choices.append(normalized_key)

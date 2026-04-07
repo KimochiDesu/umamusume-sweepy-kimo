@@ -39,14 +39,6 @@ from module.umamusume.manifest import UmamusumeManifest
 from uvicorn import run
 
 log = logger.get_logger(__name__)
-
-def _cleanup_orphan_processes():
-    for proc in ("adb.exe",):
-        try:
-            subprocess.run(f"taskkill /F /IM {proc} /T 2>nul", shell=True, capture_output=True)
-        except Exception:
-            pass
-
 _gpu_available = gpu_utils.detect_gpu_capabilities()
 _opencv_gpu = gpu_utils.configure_opencv_gpu()
 
@@ -197,23 +189,6 @@ def run_health_checks(device_id):
     except Exception:
         return True
 
-def validate_device_setup(device_id) -> bool:
-    res = _run_adb(["-s", device_id, "shell", "wm", "size"], timeout=10)
-    size_str = res.stdout.strip().split(":")[-1].strip()
-    w, h = map(int, size_str.split("x"))
-
-    dpi_res = _run_adb(["-s", device_id, "shell", "wm", "density"], timeout=10)
-    dpi = int(dpi_res.stdout.strip().split(":")[-1].strip())
-
-    ok = True
-    if w != 720 or h != 1280:
-        log.info(f"Resolution is {w}x{h}, expected 720x1280")
-        ok = False
-    if dpi != 180:
-        log.info(f"DPI is {dpi}, expected 180")
-        ok = False
-    return ok
-
 def normalize_start_end():
     global start_time, end_time
     try:
@@ -330,8 +305,6 @@ if __name__ == '__main__':
     except Exception:
         pass
 
-    _cleanup_orphan_processes()
-
     selected_device = None
     if os.environ.get("UAT_AUTORESTART", "0") == "1":
         try:
@@ -354,11 +327,6 @@ if __name__ == '__main__':
         sys.exit(1)
     
     uninstall_uiautomator(selected_device)
-    
-    if not validate_device_setup(selected_device):
-        log.info("Fix the issues above and restart.")
-        while True:
-            time.sleep(3600)
     
     if not run_health_checks(selected_device):
         print("Health checks failed")

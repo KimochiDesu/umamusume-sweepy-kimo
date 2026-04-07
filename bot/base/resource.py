@@ -1,6 +1,6 @@
 import os
 import cv2
-from bot.base.common import ImageMatchConfig, Area
+from bot.base.common import ImageMatchConfig
 
 import weakref
 
@@ -15,12 +15,12 @@ class Template:
     def __init__(self,
                  template_name: str,
                  resource_path: str,
-                 image_match_config: ImageMatchConfig = None):
+                 image_match_config: ImageMatchConfig = ImageMatchConfig()):
         self.resource_path = resource_path
         self.template_name = template_name
         self.template_path = os.path.join("resource" + self.resource_path, template_name.lower() + ".png")
         self.template_img = None
-        self.image_match_config = image_match_config if image_match_config is not None else ImageMatchConfig()
+        self.image_match_config = image_match_config
         TEMPLATE_INSTANCES.add(self)
 
     @property
@@ -37,14 +37,12 @@ class UI:
     ui_name = None
     check_exist_template_list: list[Template] = None
     check_non_exist_template_list: list[Template] = None
-    match_area: Area = None
 
     def __init__(self, ui_name, check_exist_template_list: list[Template],
-                 check_non_exist_template_list: list[Template], match_area: Area = None):
+                 check_non_exist_template_list: list[Template]):
         self.ui_name = ui_name
         self.check_exist_template_list = check_exist_template_list
         self.check_non_exist_template_list = check_non_exist_template_list
-        self.match_area = match_area
 
 
 NOT_FOUND_UI = UI("NOT_FOUND_UI", [], [])

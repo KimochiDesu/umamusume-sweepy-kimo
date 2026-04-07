@@ -22,7 +22,7 @@ detected_items_log = {}
 detected_shop_items_log = {}
 
 def log_detected_portrait(name, favor_level, is_npc=False):
-    if not name or not favor_level:
+    if not name or favor_level == 0:
         return
     existing = detected_portraits_log.get(name)
     if existing:
@@ -128,7 +128,6 @@ class CultivateContextDetail:
     parse_factor_done: bool
     extra_weight: list
     spirit_explosion: list
-    learned_skill_names: set
     manual_purchase_completed: bool
     final_skill_sweep_active: bool
     user_provided_priority: bool
@@ -170,7 +169,6 @@ class CultivateContextDetail:
         self.parse_factor_done = False
         self.extra_weight = []
         self.spirit_explosion = [0.16, 0.16, 0.16, 0.06, 0.11]
-        self.learned_skill_names = set()
         self.manual_purchase_completed = False
         self.final_skill_sweep_active = False
         self.mant_shop_items = []
@@ -199,8 +197,6 @@ class CultivateContextDetail:
         self.team_sirius_last_date = -1
         self.last_title = ""
         self.same_title_count = 0
-        self.sp_burst_skill_purchased = False
-
 
     def reset_skill_learn(self):
         self.learn_skill_done = False

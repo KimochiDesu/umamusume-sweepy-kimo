@@ -126,19 +126,11 @@ def script_cultivate_event(ctx: UmamusumeContext):
     except Exception:
         pass
 
-    ctx.cultivate_detail.event_cooldown_until = time.time() + 3.0
+    ctx.cultivate_detail.event_cooldown_until = time.time() + 1.5
 
     log.info("Event handler called")
     ctx.cultivate_detail.mant_cleat_used = False
-
-    # Track stuck state for event handling
-    if not hasattr(ctx.cultivate_detail, 'event_stuck_name'):
-        ctx.cultivate_detail.event_stuck_name = None
-    if not hasattr(ctx.cultivate_detail, 'event_stuck_count'):
-        ctx.cultivate_detail.event_stuck_count = 0
-    if not hasattr(ctx.cultivate_detail, 'event_tried_selectors'):
-        ctx.cultivate_detail.event_tried_selectors = set()
-
+    
     img = ctx.ctrl.get_screen()
     if img is None or getattr(img, 'size', 0) == 0:
         for _ in range(3):
@@ -154,86 +146,27 @@ def script_cultivate_event(ctx: UmamusumeContext):
     y1 = max(0, min(h, y1)); y2 = max(y1, min(h, y2))
     x1 = max(0, min(w, x1)); x2 = max(x1, min(w, x2))
     event_name_img = img[y1:y2, x1:x2]
-
+    
     event_name = ocr_line(event_name_img, lang="en")
-
+    
     if not event_name or not event_name.strip():
         h, w = event_name_img.shape[:2]
         event_name_img_upscaled = cv2.resize(event_name_img, (w * 2, h * 2), interpolation=cv2.INTER_CUBIC)
         event_name = ocr_line(event_name_img_upscaled, lang="en")
     if isinstance(event_name, str) and len(event_name.strip()) <= 1:
-        # OCR failed to get event name, but we're clearly on an event screen
-        # Try to find selectors and click the first one as fallback
-        log.warning("Event name OCR failed (too short), attempting fallback click")
-        try:
-            _, selectors = parse_cultivate_event(ctx, img)
-            if isinstance(selectors, list) and len(selectors) > 0:
-                target_pt = selectors[0]
-                log.info(f"Fallback: clicking first option at ({target_pt[0]}, {target_pt[1]})")
-                ctx.ctrl.click(int(target_pt[0]), int(target_pt[1]), "Event fallback click (no name)")
-                time.sleep(1.0)
-                ctx.cultivate_detail.event_cooldown_until = time.time() + 3.0
-                return
-            else:
-                log.warning(f"Fallback: selectors list has {len(selectors) if selectors else 0} items")
-        except Exception as e:
-            log.warning(f"Fallback: selector parsing failed: {e}")
-        # No selectors found, try a generic click in the button area
-        log.warning("No selectors found for unnamed event, trying center click")
-        ctx.ctrl.click(360, 900, "Event center click (no name, no selectors)")
-        time.sleep(1.0)
-        ctx.cultivate_detail.event_cooldown_until = time.time() + 3.0
         return
-
-    # Check if we're stuck on the same event
-    event_name_clean = event_name.strip()
-    if ctx.cultivate_detail.event_stuck_name == event_name_clean:
-        ctx.cultivate_detail.event_stuck_count += 1
-        log.warning(f"Event '{event_name_clean}' detected again (count: {ctx.cultivate_detail.event_stuck_count})")
-        if ctx.cultivate_detail.event_stuck_count >= 3:
-            log.warning(f"Stuck on event '{event_name_clean}' for {ctx.cultivate_detail.event_stuck_count} times - force recovery")
-            # Try clicking in center area where buttons usually are
-            ctx.ctrl.click(360, 900, "Event stuck recovery click")
-            time.sleep(1.0)
-            ctx.cultivate_detail.event_stuck_name = None
-            ctx.cultivate_detail.event_stuck_count = 0
-            ctx.cultivate_detail.event_tried_selectors = set()
-            return
-    else:
-        ctx.cultivate_detail.event_stuck_name = event_name_clean
-        ctx.cultivate_detail.event_stuck_count = 0
-        ctx.cultivate_detail.event_tried_selectors = set()
-        log.info(f"New event detected: '{event_name_clean}'")
-
-    # Check if we already clicked this event successfully
-    # But if we're stuck (high count), don't return early - we need to retry
-    last_clicked = getattr(ctx.cultivate_detail, 'last_clicked_event_name', None)
-    if last_clicked and event_name_clean == last_clicked:
-        if ctx.cultivate_detail.event_stuck_count >= 2:
-            log.warning(f"Event '{event_name_clean}' was marked as clicked but still visible (stuck={ctx.cultivate_detail.event_stuck_count}) - click didn't register, retrying")
-            # Don't return - fall through to retry
-        else:
-            log.warning(f"Event '{event_name_clean}' was already clicked, returning early")
-            return
     try:
         from bot.recog.ocr import find_similar_text
-        if not isinstance(event_name, str) or not event_name.strip():
-            log.warning(f"Event name is empty after cleanup, attempting fallback")
-            # Fall through to fallback click below
-            ctx.ctrl.click(360, 900, "Event click (empty name fallback)")
-            time.sleep(1.0)
-            ctx.cultivate_detail.event_cooldown_until = time.time() + 3.0
-            return
         event_blacklist = [
             "", " ",
             "Team Support",
         ]
+        if not isinstance(event_name, str) or not event_name.strip():
+            return
         if find_similar_text(event_name, event_blacklist, 0.9):
             log.info(f"{event_name} blacklisted. Skipping")
             return
-        log.info(f"Event name passed blacklist check: '{event_name_clean}'")
-    except Exception as e:
-        log.warning(f"Blacklist check failed: {e}")
+    except Exception:
         pass
     force_choice_index = None
     try:
@@ -243,15 +176,12 @@ def script_cultivate_event(ctx: UmamusumeContext):
             if isinstance(res, int) and res > 0:
                 force_choice_index = int(res)
             else:
-                log.warning("Team name event returned invalid result, returning without click")
                 return
     except Exception:
         pass
-
-    log.info(f"Parsing selectors for event '{event_name_clean}'")
+    
     try:
         _, selectors = parse_cultivate_event(ctx, img)
-        log.info(f"Initial parse returned {len(selectors) if selectors else 0} selectors")
     except Exception:
         selectors = []
 
@@ -267,20 +197,6 @@ def script_cultivate_event(ctx: UmamusumeContext):
                 log.info(len(selectors))
         except Exception:
             pass
-    
-    # If selectors are still empty after retry, we need to take action
-    # to avoid infinite loop on the event screen
-    if len(selectors) == 0:
-        log.warning("No selectors found for event '{}' - attempting recovery click".format(event_name))
-        # Try clicking in the center area where event buttons typically appear
-        ctx.ctrl.click(360, 900, "Event recovery click (no selectors)")
-        time.sleep(1.0)
-        ctx.cultivate_detail.event_cooldown_until = time.time() + 3.0
-        ctx.cultivate_detail.last_clicked_event_name = event_name_clean
-        return
-    elif len(selectors) > 5:
-        log.warning(f"Too many selectors ({len(selectors)}) for event '{event_name}' - using first 5")
-        selectors = selectors[:5]
     
     try:
         if isinstance(event_name, str) and event_name.strip().lower() == "tutorial":
@@ -306,14 +222,12 @@ def script_cultivate_event(ctx: UmamusumeContext):
                     if isinstance(confirm_selectors, list) and len(confirm_selectors) >= 1:
                         confirm_pt = confirm_selectors[0]
                         ctx.ctrl.click(int(confirm_pt[0]), int(confirm_pt[1]), "tutorial Yes")
-                ctx.cultivate_detail.event_cooldown_until = time.time() + 3.0
-                ctx.cultivate_detail.last_clicked_event_name = event_name
+                ctx.cultivate_detail.event_cooldown_until = time.time() + 2.5
                 return
             elif isinstance(selectors, list) and len(selectors) == 2:
                 target_pt = selectors[1]
                 ctx.ctrl.click(int(target_pt[0]), int(target_pt[1]), "tutorial choice 2")
-                ctx.cultivate_detail.event_cooldown_until = time.time() + 3.0
-                ctx.cultivate_detail.last_clicked_event_name = event_name
+                ctx.cultivate_detail.event_cooldown_until = time.time() + 2.5
                 return
     except Exception:
         pass
@@ -328,24 +242,6 @@ def script_cultivate_event(ctx: UmamusumeContext):
         choice_index, choice_source, expected_count = get_event_choice(ctx, event_name)
 
     if not isinstance(choice_index, int) or choice_index <= 0:
-        # No database match found — fall back to option 1 if selectors are available
-        # rather than returning silently and looping forever on the event screen
-        if isinstance(selectors, list) and len(selectors) > 0:
-            log.warning(
-                f"No database match for event '{event_name}' "
-                f"(choice_index={choice_index!r}, source={choice_source!r}) — "
-                f"falling back to option 1 of {len(selectors)}"
-            )
-            target_pt = selectors[0]
-            ctx.ctrl.click(int(target_pt[0]), int(target_pt[1]), "Event option-1 (fallback)")
-            threading.Thread(target=detect_hint_after_event, args=(ctx.ctrl, event_name), daemon=True).start()
-            ctx.cultivate_detail.event_cooldown_until = time.time() + 3.0
-            ctx.cultivate_detail.last_clicked_event_name = event_name_clean
-        else:
-            log.warning(
-                f"No database match for event '{event_name}' and no selectors found — "
-                f"skipping this cycle (will retry)"
-            )
         return
     if choice_index > 5:
         choice_index = 2
@@ -375,49 +271,51 @@ def script_cultivate_event(ctx: UmamusumeContext):
             idx = 1
         if idx > len(selectors):
             idx = len(selectors)
-
-        # Try to find a selector that hasn't been tried yet for this event
-        clicked = False
-        for try_idx in range(len(selectors)):
-            actual_idx = try_idx + 1  # 1-based
-            selector_key = f"{event_name_clean}_{actual_idx}"
-            if selector_key in ctx.cultivate_detail.event_tried_selectors:
-                continue
-
-            target_pt = selectors[actual_idx - 1]
-            log.info(f"Clicking option {actual_idx}/{len(selectors)} (source={choice_source})")
-            ctx.ctrl.click(int(target_pt[0]), int(target_pt[1]), f"Event option-{actual_idx}")
-            ctx.cultivate_detail.event_tried_selectors.add(selector_key)
-            clicked = True
-            break
-
-        # If all selectors tried, fall back to the originally chosen one
-        if not clicked:
-            target_pt = selectors[idx - 1]
-            log.info(f"Clicking option {idx}/{len(selectors)} (source={choice_source}, retry)")
-            ctx.ctrl.click(int(target_pt[0]), int(target_pt[1]), f"Event option-{idx} (retry)")
-            clicked = True
-
-        if clicked:
-            # Wait and verify click registered
-            time.sleep(1.5)
-            verify_img = ctx.ctrl.get_screen()
-            if verify_img is not None:
-                verify_gray = cv2.cvtColor(verify_img, cv2.COLOR_BGR2GRAY)
-                still_on_event = False
-                for tpl in EVENT_TEMPLATES:
-                    if image_match(verify_gray, tpl).find_match:
-                        still_on_event = True
-                        break
-                if still_on_event:
-                    log.warning(f"Event '{event_name_clean}' still visible after click - may need retry")
-                    # Don't mark as successfully clicked yet
-                    ctx.cultivate_detail.event_cooldown_until = time.time() + 2.0
-                    return
-                else:
-                    log.info(f"Event '{event_name_clean}' cleared after click")
-                    ctx.cultivate_detail.last_clicked_event_name = event_name_clean
+        target_pt = selectors[idx - 1]
+        log.info(f"Clicking option {idx}/{len(selectors)} (source={choice_source})")
+        ctx.ctrl.click(int(target_pt[0]), int(target_pt[1]), f"Event option-{choice_index}")
+        threading.Thread(target=detect_hint_after_event, args=(ctx.ctrl, event_name), daemon=True).start()
+        ctx.cultivate_detail.event_cooldown_until = time.time() + 2.5
+        return
+    try:
+        tpl = Template(f"dialogue{choice_index}", UMAMUSUME_REF_TEMPLATE_PATH)
+    except:
+        tpl = None
+    img_gray = cv2.cvtColor(img, cv2.COLOR_BGR2GRAY)
+    x1, y1, x2, y2 = 24, 316, 696, 936
+    h, w = img_gray.shape[:2]
+    x1 = max(0, min(w, x1)); x2 = max(x1, min(w, x2)); y1 = max(0, min(h, y1)); y2 = max(y1, min(h, y2))
+    roi_gray = img_gray[y1:y2, x1:x2]
+    clicked = False
+    if tpl is not None:
+        try:
+            for _ in range(2):
+                res = image_match(roi_gray, tpl)
+                if res.find_match:
+                    ctx.ctrl.click(res.center_point[0] + x1, res.center_point[1] + y1, f"Event option-{choice_index}")
                     threading.Thread(target=detect_hint_after_event, args=(ctx.ctrl, event_name), daemon=True).start()
+                    clicked = True
+                    ctx.cultivate_detail.event_cooldown_until = time.time() + 5
+                    return
+                time.sleep(0.56)
+                img = ctx.ctrl.get_screen()
+                img_gray = cv2.cvtColor(img, cv2.COLOR_BGR2GRAY)
+                h, w = img_gray.shape[:2]
+                x1 = max(0, min(w, x1)); x2 = max(x1, min(w, x2)); y1 = max(0, min(h, y1)); y2 = max(y1, min(h, y2))
+                roi_gray = img_gray[y1:y2, x1:x2]
+        except:
+            pass
+    if not clicked:
+        if is_still_on_event(ctx.ctrl):
+            log.info(f"no selectors found for '{event_name}', retrying parse")
+            time.sleep(0.5)
+            img_retry = ctx.ctrl.get_screen()
+            if img_retry is not None:
+                _, retry_selectors = parse_cultivate_event(ctx, img_retry)
+                if isinstance(retry_selectors, list) and len(retry_selectors) > 0:
+                    fallback_idx = min(int(choice_index), len(retry_selectors)) - 1
+                    if fallback_idx < 0:
+                        fallback_idx = 0
+                    ctx.ctrl.click(int(retry_selectors[fallback_idx][0]), int(retry_selectors[fallback_idx][1]), f"Event fallback option-{fallback_idx + 1}")
             ctx.cultivate_detail.event_cooldown_until = time.time() + 3.0
-            ctx.cultivate_detail.last_clicked_event_name = event_name_clean
-            return
+        return

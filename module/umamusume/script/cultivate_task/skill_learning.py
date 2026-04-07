@@ -188,211 +188,6 @@ def script_follow_support_card_select(ctx: UmamusumeContext):
     ctx.ctrl.click_by_point(FOLLOW_SUPPORT_CARD_SELECT_REFRESH)
 
 
-def _handle_sp_burst_purchase(ctx: UmamusumeContext, burst_skill_name: str):
-    """Mid-run burst skill: open shop, buy only the burst skill, then exit."""
-    sp_burst_threshold = int(getattr(ctx.task.detail, 'sp_burst_threshold', 0))
-    current_sp = int(getattr(ctx.cultivate_detail.turn_info.uma_attribute, 'skill_point', 0))
-
-    # Safety check — if SP dropped below threshold, just leave
-    if current_sp < sp_burst_threshold:
-        log.info(f"SP Burst: SP is now {current_sp} < threshold {sp_burst_threshold}, leaving shop")
-        ctx.cultivate_detail._sp_burst_mode = None
-        ctx.ctrl.click_by_point(RETURN_TO_CULTIVATE_FINISH)
-        return
-
-    # Scan the skill shop for our target
-    skill_list = []
-    saved_thumb_h = 36
-    drag_ratio = 1.1
-
-    scroll_to_top(ctx)
-    img = ctx.ctrl.get_screen()
-    img_rgb = cv2.cvtColor(img, cv2.COLOR_BGR2RGB)
-    thumb = find_thumb(img_rgb)
-
-    if thumb is not None:
-        thumb_h = thumb[1] - thumb[0]
-        saved_thumb_h = thumb_h
-        thumb_center = (thumb[0] + thumb[1]) // 2
-        if thumb[0] > TRACK_TOP:
-            sb_drag(ctx, thumb_center, TRACK_TOP)
-            img = ctx.ctrl.get_screen()
-            img_rgb = cv2.cvtColor(img, cv2.COLOR_BGR2RGB)
-            thumb = find_thumb(img_rgb)
-            thumb_center = (thumb[0] + thumb[1]) // 2 if thumb else TRACK_TOP + thumb_h // 2
-
-        before_cal = img
-        cal_px = 30
-        sb_drag(ctx, thumb_center, thumb_center + cal_px)
-        after_cal = ctx.ctrl.get_screen()
-        shift_cal, conf_cal = find_content_shift(before_cal, after_cal)
-        ratio = shift_cal / cal_px if (shift_cal > 0 and conf_cal > 0.85) else 14.0
-
-        img_dr = ctx.ctrl.get_screen()
-        img_dr_rgb = cv2.cvtColor(img_dr, cv2.COLOR_BGR2RGB)
-        thumb_cal = find_thumb(img_dr_rgb)
-        if thumb_cal:
-            cal_from = (thumb_cal[0] + thumb_cal[1]) // 2
-            cal_dist = 30
-            sb_drag(ctx, cal_from, cal_from + cal_dist)
-            img_dr2 = ctx.ctrl.get_screen()
-            img_dr2_rgb = cv2.cvtColor(img_dr2, cv2.COLOR_BGR2RGB)
-            thumb_cal2 = find_thumb(img_dr2_rgb)
-            if thumb_cal2:
-                cal_to = (thumb_cal2[0] + thumb_cal2[1]) // 2
-                actual_move = cal_to - cal_from
-                if actual_move > 3:
-                    drag_ratio = cal_dist / actual_move
-
-        scroll_to_top(ctx)
-        img = ctx.ctrl.get_screen()
-        img_rgb = cv2.cvtColor(img, cv2.COLOR_BGR2RGB)
-        thumb = find_thumb(img_rgb)
-        start_y = (thumb[0] + thumb[1]) // 2 if thumb else TRACK_TOP + thumb_h // 2 + 5
-
-        content_h = CONTENT_BOT - CONTENT_TOP
-        track_len = TRACK_BOT - TRACK_TOP
-        total_content = track_len * ratio + content_h
-        desired_overlap = 160
-        desired_shift = content_h - desired_overlap
-        est_frames = total_content / desired_shift
-        swipe_dur = max(5000, min(25000, int(est_frames * 600)))
-
-        scan_x_end = _gauss_scan_x()
-        swipe_cmd = "shell input swipe " + str(SB_X) + " " + str(start_y) + " " + str(scan_x_end) + " " + str(TRACK_BOT) + " " + str(swipe_dur)
-        proc = ctx.ctrl.execute_adb_shell(swipe_cmd, False)
-
-        time.sleep(0.3)
-        prev_frame = img
-        scan_deadline = time.time() + 30
-        frame_sb_positions = []
-        early_exit = False
-
-        with ThreadPoolExecutor(max_workers=1) as executor:
-            futures = []
-
-            while ctx.task.running() and time.time() < scan_deadline:
-                time.sleep(0.068)
-                curr = ctx.ctrl.get_screen()
-                if curr is not None and not content_same(prev_frame, curr):
-                    curr_rgb = cv2.cvtColor(curr, cv2.COLOR_BGR2RGB)
-                    thumb_now = find_thumb(curr_rgb)
-                    sb_y = (thumb_now[0] + thumb_now[1]) // 2 if thumb_now else None
-                    frame_sb_positions.append(sb_y)
-                    futures.append(executor.submit(get_skill_list, curr, [[burst_skill_name]], []))
-                    prev_frame = curr
-                if proc.poll() is not None:
-                    break
-
-            try:
-                proc.terminate()
-            except Exception:
-                pass
-
-            if not early_exit:
-                time.sleep(0.15)
-                final = ctx.ctrl.get_screen()
-                if final is not None and not content_same(prev_frame, final):
-                    final_rgb = cv2.cvtColor(final, cv2.COLOR_BGR2RGB)
-                    thumb_now = find_thumb(final_rgb)
-                    sb_y = (thumb_now[0] + thumb_now[1]) // 2 if thumb_now else None
-                    frame_sb_positions.append(sb_y)
-                    futures.append(executor.submit(get_skill_list, final, [[burst_skill_name]], []))
-
-            last_known_sb = start_y
-            for i, f in enumerate(futures):
-                frame_skills = f.result()
-                sb_y = frame_sb_positions[i] if i < len(frame_sb_positions) and frame_sb_positions[i] is not None else last_known_sb
-                if frame_sb_positions[i] is not None:
-                    last_known_sb = frame_sb_positions[i]
-                for s in frame_skills:
-                    if s not in skill_list:
-                        skill_list.append(s)
-
-    # Read SP from the top of the screen
-    digits_pattern = re.compile(r"\D")
-    img = ctx.ctrl.get_screen()
-    total_skill_point_text = digits_pattern.sub("", ocr_line(img[400: 440, 490: 665]))
-    total_skill_point = int(total_skill_point_text) if total_skill_point_text else 0
-    log.info(f"SP Burst shop scan: found {len(skill_list)} skills, SP read from screen: {total_skill_point}")
-
-    # Find the burst skill in the shop
-    burst_skill = None
-    for s in skill_list:
-        if (s.get("skill_name") == burst_skill_name or
-            s.get("skill_name_raw") == burst_skill_name):
-            burst_skill = s
-            break
-
-    if burst_skill is None:
-        log.info(f"SP Burst: '{burst_skill_name}' not found in shop - leaving")
-        ctx.cultivate_detail._sp_burst_mode = None
-        ctx.cultivate_detail.sp_burst_skill_purchased = True  # prevent retry loop
-        ctx.ctrl.click_by_point(RETURN_TO_CULTIVATE_FINISH)
-        return
-
-    if not burst_skill.get("available", True):
-        log.info(f"SP Burst: '{burst_skill_name}' already purchased - leaving")
-        ctx.cultivate_detail._sp_burst_mode = None
-        ctx.cultivate_detail.sp_burst_skill_purchased = True
-        ctx.ctrl.click_by_point(RETURN_TO_CULTIVATE_FINISH)
-        return
-
-    skill_cost = int(burst_skill.get("skill_cost", 0))
-    if total_skill_point < skill_cost:
-        log.info(f"SP Burst: insufficient SP (have {total_skill_point}, need {skill_cost}) - leaving")
-        ctx.cultivate_detail._sp_burst_mode = None
-        ctx.ctrl.click_by_point(RETURN_TO_CULTIVATE_FINISH)
-        return
-
-    # Buy the burst skill
-    log.info(f"SP Burst buying: '{burst_skill.get('skill_name')}' cost={skill_cost}")
-    target_list = [burst_skill.get("skill_name")]
-    remaining = target_list.copy()
-
-    for scroll_pass in range(3):
-        if not remaining:
-            break
-        scroll_to_top(ctx)
-        for _ in range(60):
-            if not remaining:
-                break
-            img = ctx.ctrl.get_screen()
-            if img is None:
-                time.sleep(0.2)
-                continue
-            prev_count = len(remaining)
-            if find_skill(ctx, img, remaining, learn_any_skill=False):
-                ctx.cultivate_detail.learn_skill_selected = True
-                remaining = remaining[prev_count - len(remaining):] if len(remaining) < prev_count else []
-                continue
-            img = ctx.ctrl.get_screen()
-            img_rgb = cv2.cvtColor(img, cv2.COLOR_BGR2RGB)
-            thumb = find_thumb(img_rgb)
-            if thumb is None:
-                time.sleep(0.15)
-                img = ctx.ctrl.get_screen()
-                img_rgb = cv2.cvtColor(img, cv2.COLOR_BGR2RGB)
-                thumb = find_thumb(img_rgb)
-                if thumb is None:
-                    continue
-            if at_bottom(img_rgb):
-                break
-            cursor = (thumb[0] + thumb[1]) // 2
-            th = thumb[1] - thumb[0]
-            next_y = min(TRACK_BOT, cursor + max(th // 2, 10))
-            if next_y <= cursor:
-                break
-            sb_drag(ctx, cursor, next_y)
-
-    # Confirm and exit
-    ctx.ctrl.click_by_point(CULTIVATE_LEARN_SKILL_CONFIRM)
-    ctx.cultivate_detail.learn_skill_done = True
-    ctx.cultivate_detail._sp_burst_mode = None
-    ctx.cultivate_detail.sp_burst_skill_purchased = True
-    log.info(f"SP Burst: '{burst_skill_name}' purchase flow complete")
-
-
 def script_cultivate_finish(ctx: UmamusumeContext):
     import bot.conn.u2_ctrl as u2c
     u2c.IN_CAREER_RUN = False
@@ -506,22 +301,16 @@ def script_cultivate_finish(ctx: UmamusumeContext):
 
 
 def script_cultivate_learn_skill(ctx: UmamusumeContext):
-    # ── SP Burst Skill only mode ──
-    burst_mode = getattr(ctx.cultivate_detail, '_sp_burst_mode', None)
-    if burst_mode and not ctx.cultivate_detail.cultivate_finish:
-        _handle_sp_burst_purchase(ctx, burst_mode)
-        return
-
     if (ctx.task.detail.manual_purchase_at_end and
-        ctx.cultivate_detail.cultivate_finish and
-        hasattr(ctx.cultivate_detail, 'manual_purchase_completed') and
+        ctx.cultivate_detail.cultivate_finish and 
+        hasattr(ctx.cultivate_detail, 'manual_purchase_completed') and 
         ctx.cultivate_detail.manual_purchase_completed):
         log.info("Manual purchase completed - returning to cultivate finish UI")
         ctx.cultivate_detail.learn_skill_done = True
         ctx.cultivate_detail.turn_info.turn_learn_skill_done = True
         ctx.ctrl.click_by_point(RETURN_TO_CULTIVATE_FINISH)
         return
-
+        
     if ctx.task.detail.manual_purchase_at_end and ctx.cultivate_detail.cultivate_finish:
         log.info("Manual purchase mode enabled - returning to cultivate finish UI")
         ctx.cultivate_detail.manual_purchase_completed = True
@@ -529,7 +318,7 @@ def script_cultivate_learn_skill(ctx: UmamusumeContext):
         ctx.cultivate_detail.turn_info.turn_learn_skill_done = True
         ctx.ctrl.click_by_point(RETURN_TO_CULTIVATE_FINISH)
         return
-
+        
     if ctx.cultivate_detail.learn_skill_done:
         log.info("Skills already learned and confirmed - exiting skill learning")
         ctx.cultivate_detail.turn_info.turn_learn_skill_done = True
@@ -741,42 +530,6 @@ def script_cultivate_learn_skill(ctx: UmamusumeContext):
     skip_dc = getattr(ctx.cultivate_detail, 'skip_double_circle_unless_high_hint', False)
     only_user = ctx.cultivate_detail.learn_skill_only_user_provided is True
     at_finish = ctx.cultivate_detail.cultivate_finish
-
-    # SP Burst Skill: check if threshold is met and buy burst skill first
-    sp_burst_skill_name = getattr(ctx.task.detail, 'sp_burst_skill', '')
-    sp_burst_threshold = int(getattr(ctx.task.detail, 'sp_burst_threshold', 0))
-    sp_burst_purchased = False
-    if sp_burst_skill_name and sp_burst_threshold > 0:
-        burst_skill_found = None
-        for s in skill_list:
-            if (s.get("skill_name") == sp_burst_skill_name or
-                s.get("skill_name_raw") == sp_burst_skill_name):
-                burst_skill_found = s
-                break
-
-        if burst_skill_found:
-            cost = burst_skill_found["skill_cost"]
-            available = burst_skill_found["available"]
-            if available and total_skill_point >= sp_burst_threshold and total_skill_point >= cost:
-                target_skill_list.append(burst_skill_found["skill_name"])
-                target_skill_list_raw.append(burst_skill_found["skill_name_raw"])
-                curr_point += cost
-                burst_skill_found["available"] = False
-                sp_burst_purchased = True
-                log.info(f"SP Burst: '{burst_skill_found['skill_name']}' cost={cost} SP={total_skill_point} >= threshold={sp_burst_threshold}")
-            else:
-                reason = []
-                if not available:
-                    reason.append("already purchased/unavailable")
-                if total_skill_point < sp_burst_threshold:
-                    reason.append(f"SP {total_skill_point} < threshold {sp_burst_threshold}")
-                if total_skill_point < cost:
-                    reason.append(f"SP {total_skill_point} < cost {cost}")
-                log.info(f"SP Burst: '{burst_skill_found.get('skill_name', '')}' configured but not buying: {'; '.join(reason)}")
-        else:
-            all_skill_names = [s.get("skill_name", "") + "/" + s.get("skill_name_raw", "") for s in skill_list]
-            log.info(f"SP Burst: skill '{sp_burst_skill_name}' not found in shop. Available skills: {', '.join(all_skill_names)}")
-
 
     for priority_level in range(len(learn_skill_list) + 1):
         if only_user and not at_finish and priority_level > 0:

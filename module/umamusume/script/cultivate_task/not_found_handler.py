@@ -1,5 +1,6 @@
 import cv2
 import random
+import time
 
 import bot.base.log as logger
 from bot.recog.ocr import ocr_line
@@ -11,11 +12,6 @@ from module.umamusume.asset.point import (
 )
 
 log = logger.get_logger(__name__)
-
-RACE_LIST_ROI = (238, 525, 300, 588)
-TITLE_AREA_ROI = (200, 400, 100, 620)
-BOND_AREA_ROI = (400, 600, 100, 620)
-MIDDLE_AREA_ROI = (800, 1000, 200, 560)
 
 
 def has_home_coin(ctx):
@@ -60,7 +56,7 @@ def script_not_found_ui(ctx: UmamusumeContext):
             img_gray_full = getattr(ctx, 'current_screen_gray', None)
             if img_gray_full is None:
                 img_gray_full = cv2.cvtColor(ctx.current_screen, cv2.COLOR_BGR2GRAY)
-            x1, y1, x2, y2 = RACE_LIST_ROI
+            x1, y1, x2, y2 = 238, 525, 300, 588
             h, w = img_gray_full.shape[:2]
             x1c = max(0, min(w, x1)); x2c = max(0, min(w, x2))
             y1c = max(0, min(h, y1)); y2c = max(0, min(h, y2))
@@ -92,7 +88,7 @@ def script_not_found_ui(ctx: UmamusumeContext):
         
         try:
             img = ctx.current_screen
-            title_area = img[TITLE_AREA_ROI[0]:TITLE_AREA_ROI[1], TITLE_AREA_ROI[2]:TITLE_AREA_ROI[3]]
+            title_area = img[200:400, 100:620]
             title_text = ocr_line(title_area).lower()
             
             log.debug(f"OCR detected text: '{title_text[:100]}...'")
@@ -104,8 +100,7 @@ def script_not_found_ui(ctx: UmamusumeContext):
                 ctx.ctrl.click_by_point(CULTIVATE_RESULT_CONFIRM)
                 return
                 
-            by1, by2, bx1, bx2 = BOND_AREA_ROI
-            bond_area = img[by1:by2, bx1:bx2]
+            bond_area = img[400:600, 100:620]
             bond_text = ocr_line(bond_area).lower()
             log.debug(f"Bond area OCR: '{bond_text[:100]}...'")
             if 'bond level' in bond_text or 'total fans' in bond_text:
@@ -122,12 +117,10 @@ def script_not_found_ui(ctx: UmamusumeContext):
         if img is not None:
             img_gray = cv2.cvtColor(img, cv2.COLOR_BGR2GRAY)
             
-            ty1, ty2, tx1, tx2 = TITLE_AREA_ROI
-            title_area = img_gray[ty1:ty2, tx1:tx2]
+            title_area = img_gray[200:400, 100:620]
             title_text = ocr_line(title_area).lower()
             
-            my1, my2, mx1, mx2 = MIDDLE_AREA_ROI
-            middle_area = img_gray[my1:my2, mx1:mx2]
+            middle_area = img_gray[800:1000, 200:560]
             middle_text = ocr_line(middle_area).lower()
             
             goal_keywords = ['goal', 'complete', 'achieved', 'failed', 'next', 'finish', 'target', 'objective']
@@ -227,6 +220,5 @@ def script_not_found_ui(ctx: UmamusumeContext):
         pass
 
     log.debug("No specific UI detected - using default fallback click")
-    # Click center-bottom area (standard "Next/Continue" button zone)
-    x, y = random.randint(300, 420), random.randint(1050, 1150)
+    x, y = random.randint(0, 111), random.randint(1, 6)
     ctx.ctrl.click(x, y, "Default fallback click")

@@ -16,9 +16,9 @@ class ImageMatchConfig:
     match_area: Area
     match_accuracy: float
 
-    def __init__(self, match_area: Area = None,
+    def __init__(self, match_area: Area = Area(0, 0, 720, 1280),
                  match_accuracy: float = 0.86):
-        self.match_area = match_area if match_area is not None else Area(0, 0, 720, 1280)
+        self.match_area = match_area
         self.match_accuracy = match_accuracy
 
 

@@ -1205,14 +1205,6 @@
                     </div>
                   </div>
                 </div>
-                <div class="form-group mt-2">
-                  <div class="d-flex align-items-center gap-2">
-                    <button class="btn btn-sm btn--outline" type="button" @click="exportRaceSchedule">Export Race Schedule</button>
-                    <button class="btn btn-sm btn--outline" type="button" @click="importRaceSchedule">Import Race Schedule</button>
-                    <button class="btn btn-sm btn-outline-danger" type="button" @click="clearRaceSchedule">Clear</button>
-                    <input ref="raceScheduleFileInput" type="file" accept=".json" style="display:none" @change="onRaceScheduleFileSelected">
-                  </div>
-                </div>
                 <div class="form-group">
                   <div class="race-options-header" @click="switchRaceList">
                     <div class="race-options-title">
@@ -1368,7 +1360,7 @@
                 </div>
               </div>
 
-
+              
               <div class="form-group">
                 <label class="form-label section-heading">
                   <i class="fas fa-ban"></i>
@@ -1395,40 +1387,7 @@
                 </div>
               </div>
 
-
-              <div class="form-group">
-                <label class="form-label section-heading">
-                  <i class="fas fa-bolt"></i>
-                  SP Burst Skill
-                </label>
-                <div class="burst-skill-card">
-                  <div class="d-flex align-items-center gap-2 mb-2">
-                    <span class="burst-skill-desc">When SP reaches this amount, immediately buy the selected skill before anything else</span>
-                  </div>
-                  <div class="d-flex align-items-center gap-3">
-                    <div class="token-toggle" role="group" aria-label="Enable SP Burst Skill">
-                      <button type="button" class="token" :class="{ active: spBurstEnabled }" @click="spBurstEnabled = true">Enabled</button>
-                      <button type="button" class="token" :class="{ active: !spBurstEnabled }" @click="spBurstEnabled = false">Disabled</button>
-                    </div>
-                    <div class="form-group mb-0" style="flex:1">
-                      <input v-model.trim="spBurstSkillName" type="text" class="form-control form-control-sm"
-                        placeholder="Drag a skill here or type skill name"
-                        :disabled="!spBurstEnabled"
-                        @dragover.prevent="spBurstEnabled ? spBurstDragOver = true : null"
-                        @dragleave="spBurstDragOver = false"
-                        @drop.prevent="onDropToBurst($event)"
-                        :class="{ 'burst-drop-active': spBurstDragOver }" />
-                    </div>
-                    <div class="burst-sp-group d-flex align-items-center gap-1" style="white-space:nowrap">
-                      <label class="burst-sp-label mb-0">SP</label>
-                      <input type="number" class="form-control form-control-sm burst-sp-input" v-model.number="spBurstThreshold"
-                        min="0" max="9999" :disabled="!spBurstEnabled" placeholder="e.g. 500" />
-                    </div>
-                  </div>
-                </div>
-              </div>
-
-
+              
               <div class="form-group">
                 <div class="skill-list-header" @click="toggleSkillList">
                   <div class="skill-list-title">
@@ -2350,11 +2309,7 @@ export default {
       availableTiers: ['', 'SS', 'S', 'A', 'B', 'C', 'D'],
       availableRarities: ['', 'Unique', 'Rare', 'Normal'],
       showSkillList: false
-      , spBurstEnabled: false,
-      spBurstSkillName: '',
-      spBurstThreshold: 0,
-      spBurstDragOver: false,
-       showPresetMenu: false,
+      , showPresetMenu: false,
       sharePresetText: '',
 
       showSlotPopup: false,
@@ -2946,16 +2901,6 @@ export default {
         this.dropHoverTarget = null;
         this.draggingSkillName = null;
       },
-      onDropToBurst(e) {
-        if (this.draggingSkillName) {
-          this.spBurstSkillName = this.draggingSkillName;
-          this.spBurstEnabled = true;
-          this.spBurstDragOver = false;
-          this.didValidDrop = true;
-          this.dropHoverTarget = null;
-          this.draggingSkillName = null;
-        }
-      },
       onGlobalDrop(e) {
                 if (this.draggingSkillName && !this.didValidDrop) {
           this.deselectSkill(this.draggingSkillName);
@@ -3298,54 +3243,6 @@ export default {
         this.extraRace.push(raceId);
       }
     },
-    exportRaceSchedule: function () {
-      if (!this.extraRace.length) {
-        const toastBody = document.querySelector('#liveToast .toast-body');
-        if (toastBody) toastBody.textContent = 'No races selected to export';
-        this.successToast.toast('show');
-        return;
-      }
-      const payload = { race_schedule: [...this.extraRace] };
-      const blob = new Blob([JSON.stringify(payload, null, 2)], { type: 'application/json' });
-      const url = URL.createObjectURL(blob);
-      const a = document.createElement('a');
-      a.href = url;
-      a.download = 'race_schedule.json';
-      a.click();
-      URL.revokeObjectURL(url);
-      const toastBody = document.querySelector('#liveToast .toast-body');
-      if (toastBody) toastBody.textContent = `Exported ${this.extraRace.length} race(s)`;
-      this.successToast.toast('show');
-    },
-    importRaceSchedule: function () {
-      this.$refs.raceScheduleFileInput.click();
-    },
-    onRaceScheduleFileSelected: function (e) {
-      const file = e.target.files[0];
-      if (!file) return;
-      const reader = new FileReader();
-      reader.onload = (ev) => {
-        try {
-          const data = JSON.parse(ev.target.result);
-          const races = data.race_schedule || data.race_list || data.races || [];
-          if (!Array.isArray(races)) {
-            alert('Invalid race schedule file: array of race IDs expected');
-            return;
-          }
-          this.extraRace = races.map(r => typeof r === 'object' ? r.id : Number(r));
-          e.target.value = '';
-          const toastBody = document.querySelector('#liveToast .toast-body');
-          if (toastBody) toastBody.textContent = `Imported ${this.extraRace.length} race(s)`;
-          this.successToast.toast('show');
-        } catch (err) {
-          alert('Failed to parse race schedule JSON: ' + err.message);
-        }
-      };
-      reader.readAsText(file);
-    },
-    clearRaceSchedule: function () {
-      this.extraRace = [];
-    },
     getSelectedRaceForSlot: function (slot) {
       if (!slot || !slot.races || slot.races.length === 0) return null;
       return slot.races.find(r => this.extraRace.includes(r.id)) || null;
@@ -3655,9 +3552,7 @@ export default {
             "charm_failure_rate": this.mantCharmFailureRate,
             "skip_race_percentile": this.mantSkipRacePercentile,
             "tier_thresholds": { ...this.mantTierThresholds }
-          } : null,
-          "sp_burst_skill": this.spBurstEnabled ? this.spBurstSkillName : null,
-          "sp_burst_threshold": this.spBurstThreshold
+          } : null
         }
       }
       if (this.selectedExecuteMode === 2) {
@@ -4174,9 +4069,6 @@ export default {
       this.learnSkillThreshold = data.learn_skill_threshold || this.learnSkillThreshold;
       this.recoverTP = data.allow_recover_tp || 0;
       this.manualPurchase = data.manual_purchase_at_end || false;
-      this.spBurstEnabled = !!data.sp_burst_skill && data.sp_burst_skill !== '';
-      this.spBurstSkillName = data.sp_burst_skill || '';
-      this.spBurstThreshold = data.sp_burst_threshold || 0;
       this.skipDoubleCircleUnlessHighHint = data.skip_double_circle_unless_high_hint || false;
       this.hintBoostCharacters = Array.isArray(data.hint_boost_characters) ? [...data.hint_boost_characters] : [];
       this.hintBoostMultiplier = data.hint_boost_multiplier !== undefined ? data.hint_boost_multiplier : 100;
@@ -5593,46 +5485,13 @@ export default {
 }
 
 .selected-skills-box,
-.blacklist-box,
-.burst-skill-card {
+.blacklist-box {
   border: 2px dashed #dee2e6;
   border-radius: 8px;
   padding: 16px;
   min-height: 80px;
   background: var(--surface-2);
   transition: all 0.2s ease;
-}
-
-.burst-skill-card {
-  min-height: auto;
-  border-style: dashed;
-  border-color: #ffc107;
-}
-
-.burst-skill-desc {
-  font-size: 12px;
-  color: var(--muted);
-  font-style: italic;
-}
-
-.burst-sp-group {
-  flex-shrink: 0;
-}
-
-.burst-sp-label {
-  font-size: 12px;
-  color: var(--muted);
-  font-weight: 600;
-}
-
-.burst-sp-input {
-  width: 70px !important;
-}
-
-input.burst-drop-active,
-.burst-skill-card .form-control.burst-drop-active {
-  border-color: #28a745 !important;
-  box-shadow: 0 0 0 0.2rem rgba(40, 167, 69, 0.25);
 }
 
 .selected-skills-box:hover,

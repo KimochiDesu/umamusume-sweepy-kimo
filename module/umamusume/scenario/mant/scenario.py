@@ -1,7 +1,11 @@
+import cv2
+
 from module.umamusume.scenario.ura_scenario import URAScenario
 from module.umamusume.scenario.registry import register
 from module.umamusume.asset import *
-from module.umamusume.define import ScenarioType
+from module.umamusume.define import ScenarioType, SupportCardFavorLevel, SupportCardType
+from module.umamusume.types import SupportCardInfo
+from bot.recog.image_matcher import image_match, compare_color_equal
 from bot.recog.training_stat_scanner import parse_training_result_template
 from .handlers import get_mant_ui_handlers
 from .hooks import mant_after_hook
