@@ -238,7 +238,7 @@ REF_MANT_ON_SALE = Template("mant_on_sale", UMAMUSUME_REF_TEMPLATE_PATH, ImageMa
 REF_BLUE_LINE = Template("blue_line", UMAMUSUME_REF_TEMPLATE_PATH)
 REF_MANT_FINAL_END = Template("mant_final_end", UMAMUSUME_REF_TEMPLATE_PATH, ImageMatchConfig(match_area=Area(280, 10, 450, 90), match_accuracy=0.80))
 REF_MANT_SHOP_TITLE = Template("shop_title", UMAMUSUME_REF_MANT_SHOP_PATH, ImageMatchConfig(match_area=Area(17, 8, 78, 35)))
-REF_SHOP_MANT_CHECK = Template("shop_mant_check", UMAMUSUME_REF_MANT_SHOP_PATH, ImageMatchConfig(match_area=Area(23, 10, 74, 31), match_accuracy=0.83))
+REF_SHOP_MANT_CHECK = Template("shop_mant_check", UMAMUSUME_REF_MANT_SHOP_PATH, ImageMatchConfig(match_area=Area(23, 10, 74, 31), match_accuracy=0.70))
 
 REF_MANT_REWARD_ITEMS = Template("items", UMAMUSUME_REF_TEMPLATE_PATH, ImageMatchConfig(match_area=Area(224, 797, 326, 817), match_accuracy=0.76))
 

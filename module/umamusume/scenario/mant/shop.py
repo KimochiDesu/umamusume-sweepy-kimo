@@ -429,20 +429,47 @@ def scan_mant_shop(ctx):
 
     log.info(f"Opening MANT shop at coordinates ({shop_x}, {SHOP_OPEN_Y})")
     ctx.ctrl.click(shop_x, SHOP_OPEN_Y, "MANT shop open")
-    deadline = time.time() + 2.0
+    deadline = time.time() + 3.0  # Increased timeout to 3s
     shop_detected = False
+    attempts = 0
+    best_accuracy = 0.0
+
     while time.time() < deadline:
+        attempts += 1
         img_check = ctx.ctrl.get_screen(to_gray=True)
+        if img_check is None:
+            log.warning(f"Attempt {attempts}: get_screen returned None")
+            time.sleep(0.17)
+            continue
+
         match_result = image_match(img_check, REF_SHOP_MANT_CHECK)
+        if match_result.match_accuracy > best_accuracy:
+            best_accuracy = match_result.match_accuracy
+
+        log.debug(f"Attempt {attempts}: Shop detection accuracy = {match_result.match_accuracy:.3f}, required = 0.70")
+
         if match_result.find_match:
-            log.info(f"Shop detected successfully (accuracy: {match_result.match_accuracy:.2f})")
+            log.info(f"Shop detected successfully after {attempts} attempts (accuracy: {match_result.match_accuracy:.3f})")
             shop_detected = True
             break
         time.sleep(0.17)
 
     if not shop_detected:
         # Shop detection failed - close it before returning
-        log.warning("Shop detection failed after 2s timeout - closing shop and returning None")
+        log.warning(f"Shop detection failed after {attempts} attempts in 3s (best accuracy: {best_accuracy:.3f}, required: 0.70)")
+        log.warning("This may indicate the shop template image needs updating or the game UI has changed")
+
+        # Try to save screenshot for debugging
+        try:
+            debug_img = ctx.ctrl.get_screen()
+            if debug_img is not None:
+                import os
+                debug_path = os.path.join("debug_shop_failed.png")
+                cv2.imwrite(debug_path, debug_img)
+                log.info(f"Saved debug screenshot to {debug_path}")
+        except Exception as e:
+            log.debug(f"Could not save debug screenshot: {e}")
+
         ctx.ctrl.click(BACK_BTN_X, BACK_BTN_Y, "Close shop (detection failed)")
         time.sleep(0.8)
         return None
