@@ -168,7 +168,22 @@ def handle_mant_shop_scan(ctx, current_date, force_scan=False):
         for name, _, _, _, bought in items_list:
             if not bought:
                 shop_copy_counts[name] = shop_copy_counts.get(name, 0) + 1
-        log.info(f"Shop scan: budget={budget}, available items={len(shop_available)}, items={list(shop_available)[:5]}")
+
+        # Log all items in shop with their costs
+        log.info(f"Shop scan: budget={budget} coins, available items={len(shop_available)}")
+        log.info(f"Shop items available: {sorted(shop_available)}")
+
+        # Log what can be afforded
+        affordable_items = []
+        for item in shop_available:
+            cost = SHOP_ITEM_COSTS.get(item, 9999)
+            if cost <= budget:
+                affordable_items.append(f"{item}({cost})")
+        if affordable_items:
+            log.info(f"Affordable items ({len(affordable_items)}): {sorted(affordable_items)}")
+        else:
+            log.info(f"No affordable items with current budget of {budget}")
+
         log.info(f"Shop scan: tier_count={mant_cfg.tier_count}, item_tiers keys={list(mant_cfg.item_tiers.keys())[:10]}")
 
         img = ctx.ctrl.get_screen()
@@ -367,8 +382,47 @@ def handle_mant_shop_scan(ctx, current_date, force_scan=False):
                     tier_targets.append(display)
                     budget -= cost
 
-        targets = priority_targets + tier_targets
-        log.info(f"Shop purchase targets: {targets} (budget={budget})")
+        # Define item categories for prioritization: energy > stats > others
+        ENERGY_ITEMS = {'Energy Drink MAX', 'Energy Drink MAX EX'}
+        STATS_ITEMS = {
+            'Speed Notepad', 'Stamina Notepad', 'Power Notepad', 'Guts Notepad', 'Wit Notepad',
+            'Speed Manual', 'Stamina Manual', 'Power Manual', 'Guts Manual', 'Wit Manual',
+            'Speed Scroll', 'Stamina Scroll', 'Power Scroll', 'Guts Scroll', 'Wit Scroll',
+            'Vita 20', 'Vita 40', 'Vita 65',
+            'Speed Training Application', 'Stamina Training Application', 'Power Training Application',
+            'Guts Training Application', 'Wit Training Application',
+            'Speed Ankle Weights', 'Stamina Ankle Weights', 'Power Ankle Weights', 'Guts Ankle Weights'
+        }
+
+        def get_item_priority(item_name):
+            """Return priority value: 0=energy (highest), 1=stats, 2=others (lowest)"""
+            if item_name in ENERGY_ITEMS:
+                return 0
+            elif item_name in STATS_ITEMS:
+                return 1
+            else:
+                return 2
+
+        # Combine and sort by priority
+        all_targets = priority_targets + tier_targets
+
+        # Sort targets by priority: energy > stats > others
+        targets = sorted(all_targets, key=get_item_priority)
+
+        log.info(f"Shop purchase targets (sorted by priority - energy/stats/others): {targets} (budget={budget})")
+
+        # Log categorized items for clarity
+        energy_targets = [t for t in targets if get_item_priority(t) == 0]
+        stats_targets = [t for t in targets if get_item_priority(t) == 1]
+        other_targets = [t for t in targets if get_item_priority(t) == 2]
+
+        if energy_targets:
+            log.info(f"  [ENERGY] {energy_targets}")
+        if stats_targets:
+            log.info(f"  [STATS] {stats_targets}")
+        if other_targets:
+            log.info(f"  [OTHERS] {other_targets}")
+
         if targets:
             log.info(f"Shop scan: attempting to buy {len(targets)} items: {targets}")
             bought_any, held_items = buy_shop_items(ctx, targets, items_list, ratio, drag_ratio, first_item_gy)
