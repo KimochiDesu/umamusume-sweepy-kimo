@@ -234,5 +234,9 @@ def check_and_detect_race_reward_items(img, img_gray, ctx=None):
                 for name in items:
                     if name not in existing_names:
                         ctx.cultivate_detail.mant_shop_items.append((name, 0, 0, 3, False))
+                # Force a shop rescan since new items were added
+                ctx.cultivate_detail.mant_force_shop_rescan = True
+                ctx.cultivate_detail.mant_shop_scanned_this_turn = False
+                log.info("Race rewards detected - forcing shop rescan on next main menu")
     except Exception:
         pass

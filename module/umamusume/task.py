@@ -29,6 +29,7 @@ class TaskDetail:
     motivation_threshold_year1: int
     motivation_threshold_year2: int
     motivation_threshold_year3: int
+    skip_training_on_race_day: bool
     prioritize_recreation: bool
     pal_name: str
     pal_thresholds: list
@@ -106,6 +107,7 @@ def build_task(task_execute_mode: TaskExecuteMode, task_type: int,
     td.motivation_threshold_year1 = attachment_data.get('motivation_threshold_year1', 3)
     td.motivation_threshold_year2 = attachment_data.get('motivation_threshold_year2', 4)
     td.motivation_threshold_year3 = attachment_data.get('motivation_threshold_year3', 4)
+    td.skip_training_on_race_day = attachment_data.get('skip_training_on_race_day', False)
     td.pal_name = attachment_data.get('pal_name', "")
     td.pal_thresholds = attachment_data.get('pal_thresholds', [])
     if not isinstance(td.pal_thresholds, list) or not td.pal_thresholds:

@@ -88,14 +88,26 @@ def script_cultivate_main_menu(ctx: UmamusumeContext):
 
     if not ctx.cultivate_detail.turn_info.parse_main_menu_finish:
         parse_cultivate_main_menu(ctx, img)
-        
+
         from module.umamusume.asset.race_data import get_races_for_period
         available_races = get_races_for_period(ctx.cultivate_detail.turn_info.date)
         ctx.cultivate_detail.turn_info.cached_available_races = available_races
         ctx.cultivate_detail.turn_info.parse_main_menu_finish = True
 
-    has_extra_race = len([race_id for race_id in ctx.cultivate_detail.extra_race_list 
-                         if race_id in ctx.cultivate_detail.turn_info.cached_available_races]) != 0
+        try:
+            from module.umamusume.persistence import save_checkpoint
+            save_checkpoint(ctx)
+        except Exception as e:
+            log.debug(f"Checkpoint save failed: {e}")
+
+    cached_races = getattr(ctx.cultivate_detail.turn_info, 'cached_available_races', None)
+    if cached_races is None:
+        from module.umamusume.asset.race_data import get_races_for_period
+        cached_races = get_races_for_period(ctx.cultivate_detail.turn_info.date)
+        ctx.cultivate_detail.turn_info.cached_available_races = cached_races
+
+    has_extra_race = len([race_id for race_id in ctx.cultivate_detail.extra_race_list
+                         if race_id in cached_races]) != 0
 
     if not has_extra_race:
         ts_enabled = getattr(ctx.cultivate_detail, 'team_sirius_enabled', False)
@@ -144,26 +156,52 @@ def script_cultivate_main_menu(ctx: UmamusumeContext):
                         log.info("pal notification gone, resetting stage")
                         ctx.cultivate_detail.pal_event_stage = 0
 
+    skip_training_on_race_day = getattr(ctx.task.detail, 'skip_training_on_race_day', False)
+
     if has_extra_race and not is_mant(ctx):
-        log.info("extra race this turn, prioritizing")
-        if ctx.cultivate_detail.turn_info.turn_operation is None:
-            ctx.cultivate_detail.turn_info.turn_operation = TurnOperation()
-        ctx.cultivate_detail.turn_info.turn_operation.turn_operation_type = TurnOperationType.TURN_OPERATION_TYPE_RACE
-        matching_races = [race_id for race_id in ctx.cultivate_detail.extra_race_list if race_id in ctx.cultivate_detail.turn_info.cached_available_races]
-        if matching_races:
-            target_race_id = matching_races[0]
-            ctx.cultivate_detail.turn_info.turn_operation.race_id = target_race_id
-            log.info(f"Set race: {target_race_id}")
+        if not skip_training_on_race_day:
+            if not ctx.cultivate_detail.turn_info.parse_train_info_finish:
+                log.info("extra race this turn, prioritizing")
+                if ctx.cultivate_detail.turn_info.turn_operation is None:
+                    ctx.cultivate_detail.turn_info.turn_operation = TurnOperation()
+                ctx.cultivate_detail.turn_info.turn_operation.turn_operation_type = TurnOperationType.TURN_OPERATION_TYPE_RACE
+                matching_races = [race_id for race_id in ctx.cultivate_detail.extra_race_list if race_id in ctx.cultivate_detail.turn_info.cached_available_races]
+                if matching_races:
+                    target_race_id = matching_races[0]
+                    ctx.cultivate_detail.turn_info.turn_operation.race_id = target_race_id
+                    log.info(f"Set race: {target_race_id}")
+                else:
+                    log.info("extra race not in available races")
+                ctx.cultivate_detail.turn_info.parse_train_info_finish = True
+                return
         else:
-            log.info("extra race not in available races")
-        ctx.cultivate_detail.turn_info.parse_train_info_finish = True
-        return
+            log.info("extra race available but skipping training check disabled - will check training first")
+
     if has_extra_race and is_mant(ctx):
-        log.info("MANT: extra race available but scanning training first")
+        if not skip_training_on_race_day:
+            log.info("MANT: extra race available but scanning training first")
+        else:
+            log.info("MANT: extra race available, skip_training_on_race_day enabled - will check shops then race")
 
     if is_mant(ctx):
         from module.umamusume.scenario.mant.main_menu import handle_mant_main_menu
         if handle_mant_main_menu(ctx, img, current_date):
+            return
+
+    if has_extra_race and skip_training_on_race_day:
+        if not ctx.cultivate_detail.turn_info.parse_train_info_finish:
+            log.info("Skip training on race day enabled - going straight to race")
+            if ctx.cultivate_detail.turn_info.turn_operation is None:
+                ctx.cultivate_detail.turn_info.turn_operation = TurnOperation()
+            ctx.cultivate_detail.turn_info.turn_operation.turn_operation_type = TurnOperationType.TURN_OPERATION_TYPE_RACE
+            matching_races = [race_id for race_id in ctx.cultivate_detail.extra_race_list if race_id in ctx.cultivate_detail.turn_info.cached_available_races]
+            if matching_races:
+                target_race_id = matching_races[0]
+                ctx.cultivate_detail.turn_info.turn_operation.race_id = target_race_id
+                log.info(f"Set race: {target_race_id}")
+            else:
+                log.info("extra race not in available races")
+            ctx.cultivate_detail.turn_info.parse_train_info_finish = True
             return
 
     available_races = getattr(ctx.cultivate_detail.turn_info, 'cached_available_races', None)
@@ -275,10 +313,11 @@ def script_cultivate_main_menu(ctx: UmamusumeContext):
                     energy = getattr(ctx.cultivate_detail.turn_info, 'cached_energy', energy)
         if energy <= limit:
             if getattr(ctx.cultivate_detail.turn_info, 'energy_recovery_deferred', False):
-                base_energy, _, _ = scan_energy(ctx.ctrl)
-                ctx.cultivate_detail.turn_info.base_energy = base_energy
-                ctx.ctrl.click_by_point(TO_TRAINING_SELECT)
-                return
+                if not (has_extra_race and skip_training_on_race_day):
+                    base_energy, _, _ = scan_energy(ctx.ctrl)
+                    ctx.cultivate_detail.turn_info.base_energy = base_energy
+                    ctx.ctrl.click_by_point(TO_TRAINING_SELECT)
+                    return
             if should_use_team_sirius_recreation(ctx):
                 if execute_team_sirius_recreation(ctx, trip_click_point=get_trip(ctx)):
                     return

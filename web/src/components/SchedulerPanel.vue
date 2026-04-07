@@ -68,13 +68,8 @@ export default {
   },
   methods: {
     handleEditTask(task) {
-      const taskId = task.task_id;
-      this.axios.delete("/task", { task_id: taskId }).then(() => {
-        this.$refs.taskEditModal.loadFromTask(task);
-        this.$refs.taskEditModal.showModal();
-      }).catch(e => {
-        console.error(e);
-      });
+      this.$refs.taskEditModal.loadFromTask(task);
+      this.$refs.taskEditModal.showModalForEdit();
     },
     toggleCharacter() {
       this.activeCharacter = this.activeCharacter === 0 ? 1 : 0;

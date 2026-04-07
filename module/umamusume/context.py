@@ -325,4 +325,16 @@ def build_context(task: UmamusumeTask, ctrl) -> UmamusumeContext:
             detail.mant_megaphone_tier = 0
             detail.mant_megaphone_turns = 0
 
+        try:
+            from module.umamusume.persistence import load_checkpoint, restore_checkpoint_to_context
+            checkpoint_data = load_checkpoint()
+            if checkpoint_data:
+                log.info("=" * 60)
+                log.info("CHECKPOINT FOUND - Resuming interrupted training")
+                log.info("=" * 60)
+                restore_checkpoint_to_context(ctx, checkpoint_data)
+                log.info("Checkpoint restored successfully")
+        except Exception as e:
+            log.info(f"Checkpoint restoration failed: {e}")
+
     return ctx

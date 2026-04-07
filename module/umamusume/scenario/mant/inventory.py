@@ -596,25 +596,17 @@ def scan_inventory(ctx, stop_when_found=None):
 
 
 
-def find_plus_buttons(frame):
-    from module.umamusume.asset.template import REF_MANT_PLUS
-    template = cv2.imread(REF_MANT_PLUS.template_path)
-    if template is None:
-        return []
-    gray = cv2.cvtColor(frame, cv2.COLOR_BGR2GRAY)
-    tmpl_gray = cv2.cvtColor(template, cv2.COLOR_BGR2GRAY)
-    th, tw = tmpl_gray.shape[:2]
-    result = cv2.matchTemplate(gray, tmpl_gray, cv2.TM_CCOEFF_NORMED)
-    threshold = 0.8
-    loc = np.where(result >= threshold)
-    buttons = []
-    for pt in zip(*loc[::-1]):
-        cx = pt[0] + tw // 2
-        cy = pt[1] + th // 2
-        if any(abs(cx - bx) < 10 and abs(cy - by) < 10 for bx, by in buttons):
-            continue
-        buttons.append((cx, cy))
-    return buttons
+def is_plus_disabled(frame, plus_x, plus_y):
+    h, w = frame.shape[:2]
+    x1 = max(0, min(w - 1, plus_x - 14))
+    x2 = max(0, min(w, plus_x + 14))
+    y1 = max(0, min(h - 1, plus_y - 14))
+    y2 = max(0, min(h, plus_y + 60))
+    patch = frame[y1:y2, x1:x2]
+    hsv = cv2.cvtColor(patch, cv2.COLOR_BGR2HSV)
+    s_mean = float(np.mean(hsv[:, :, 1]))
+    v_std = float(np.std(hsv[:, :, 2]))
+    return s_mean < 35 and v_std < 35
 
 
 def try_click_item_plus_once(ctx, item_name: str) -> bool:
@@ -633,33 +625,12 @@ def try_click_item_plus_once(ctx, item_name: str) -> bool:
                 target_y = abs_y
                 break
         if target_y is not None and 130 < target_y < 1030:
-            plus_buttons = find_plus_buttons(frame)
-            if not plus_buttons:
-                log.warning(f"No + buttons found on screen")
-                plus_x = 648
-                plus_y = int(round(target_y + 48))
-                ctx.ctrl.execute_adb_shell(f"shell input tap {plus_x} {plus_y}", True)
-                time.sleep(0.25)
-                return True
-            best_button = None
-            best_dy = float('inf')
-            for bx, by in plus_buttons:
-                dy = abs(by - target_y)
-                if dy < best_dy:
-                    best_dy = dy
-                    best_button = (bx, by)
-            if best_button and best_dy < 80:
-                log.info(f"Clicking + for '{item_name}' at ({best_button[0]}, {best_button[1]}), dy={best_dy:.1f}")
-                ctx.ctrl.execute_adb_shell(f"shell input tap {best_button[0]} {best_button[1]}", True)
-                time.sleep(0.25)
-                return True
-            else:
-                log.warning(f"No + button found near '{item_name}' (y={target_y:.1f}), best dy={best_dy:.1f}")
-                plus_x = 648
-                plus_y = int(round(target_y + 48))
-                ctx.ctrl.execute_adb_shell(f"shell input tap {plus_x} {plus_y}", True)
-                time.sleep(0.25)
-                return True
+            plus_x = 648
+            plus_y = int(round(target_y + 48))
+            log.info(f"Clicking + for '{item_name}' at ({plus_x}, {plus_y}), dy={plus_y - target_y:.1f}")
+            ctx.ctrl.execute_adb_shell(f"shell input tap {plus_x} {plus_y}", True)
+            time.sleep(0.25)
+            return True
 
         img_rgb = cv2.cvtColor(frame, cv2.COLOR_BGR2RGB)
         thumb = inv_find_thumb(img_rgb)

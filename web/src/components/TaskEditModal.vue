@@ -1143,6 +1143,15 @@
                 <div>Racing Style Selection</div>
               </div>
 
+              <div class="form-group">
+                <label class="d-block mb-2">Race Day Behavior (When extra races are scheduled)</label>
+                <div class="token-toggle" role="group" aria-label="Race Day Behavior">
+                  <button type="button" class="token" :class="{ active: skipTrainingOnRaceDay }" @click="skipTrainingOnRaceDay = true">Skip Training (Still Check Shops)</button>
+                  <button type="button" class="token" :class="{ active: !skipTrainingOnRaceDay }" @click="skipTrainingOnRaceDay = false">Check Training First</button>
+                </div>
+                <small class="form-text text-muted">When enabled, bot will skip training selection on race days but will still check MANT shops if applicable</small>
+              </div>
+
               <div class="form-group mt-3" style="border-top: 1px solid var(--accent); padding-top: 15px;">
                 <label>Advanced Strategy Conditions (Evaluated top-to-bottom)</label>
                 <div v-for="(rule, idx) in raceTacticConditions" :key="idx" class="d-flex align-items-center mb-2">
@@ -2074,6 +2083,7 @@ export default {
       overrideInsufficientFansForcedRaces: false,
       showAdvanceOption: false,
       showRaceList: false,
+      skipTrainingOnRaceDay: false,
       dataReady: false,
       hideG2: false,
       hideG3: false,
@@ -2228,6 +2238,7 @@ export default {
       cureAsapConditions: 'Migraine,Night Owl,Skin Outbreak,Slacker,Slow Metabolism,(Practice poor isn\'t worth a turn to cure)',
       recoverTP: 0,
       useLastParents: false,
+      editingTaskId: null,
       presetNameEdit: "",
       presetAction: null,
       overwritePresetName: "",
@@ -3513,6 +3524,7 @@ export default {
           "motivation_threshold_year1": this.motivationThresholdYear1,
           "motivation_threshold_year2": this.motivationThresholdYear2,
           "motivation_threshold_year3": this.motivationThresholdYear3,
+          "skip_training_on_race_day": this.skipTrainingOnRaceDay,
           "prioritize_recreation": this.prioritizeRecreation,
           "fujikiseki_show_mode": this.fujikisekiShowMode,
           "fujikiseki_show_difficulty": this.fujikisekiShowDifficulty,
@@ -3610,13 +3622,27 @@ export default {
         [...this.npcScoreFinale]
       ];
 
-      this.axios.post("/task", payload).then(
-        () => {
-          $('#create-task-list-modal').modal('hide');
-        }
-      ).catch(e => {
-        console.error(e)
-      })
+      const submitTask = () => {
+        this.axios.post("/task", payload).then(
+          () => {
+            this.editingTaskId = null;
+            $('#create-task-list-modal').modal('hide');
+          }
+        ).catch(e => {
+          console.error(e)
+        })
+      };
+
+      if (this.editingTaskId) {
+        this.axios.delete("/task", { task_id: this.editingTaskId }).then(() => {
+          submitTask();
+        }).catch(e => {
+          console.error(e);
+          submitTask();
+        });
+      } else {
+        submitTask();
+      }
     },
     applyPresetRace: function () {
       this.selectedScenario = this.presetsUse.scenario || 1
@@ -3647,8 +3673,12 @@ export default {
         this.friendshipScoreGroups = [{ characters: [], multiplier: 100, search: '', expanded: false }, { characters: [], multiplier: 100, search: '', expanded: false }]
       }
         this.learnSkillThreshold = this.presetsUse.learn_skill_threshold
-        if (this.presetsUse.tactic_actions && this.presetsUse.tactic_actions.length > 0) {
-          this.raceTacticConditions = this.presetsUse.tactic_actions;
+        if ('tactic_actions' in this.presetsUse) {
+          if (this.presetsUse.tactic_actions && this.presetsUse.tactic_actions.length > 0) {
+            this.raceTacticConditions = this.presetsUse.tactic_actions;
+          } else {
+            this.raceTacticConditions = [];
+          }
         } else {
           const t1 = this.presetsUse.race_tactic_1 || 3;
           const t2 = this.presetsUse.race_tactic_2 || 3;
@@ -3662,6 +3692,10 @@ export default {
         this.skillLearnBlacklist = this.presetsUse.skill_blacklist
      this.cureAsapConditions = this.presetsUse.cureAsapConditions
       this.motivationThresholdYear1 = parseInt(this.presetsUse.motivation_threshold_year1) || 3
+      this.skipTrainingOnRaceDay = (this.presetsUse.skip_training_on_race_day === true)
+      if (this.presetsUse.showAdvanceOption !== undefined) {
+        this.showAdvanceOption = this.presetsUse.showAdvanceOption
+      }
       this.motivationThresholdYear2 = parseInt(this.presetsUse.motivation_threshold_year2) || 4
       this.motivationThresholdYear3 = parseInt(this.presetsUse.motivation_threshold_year3) || 4
       this.prioritizeRecreation = this.presetsUse.prioritize_recreation || false
@@ -3988,13 +4022,22 @@ export default {
 
     },
     showModal: function () {
+      this.editingTaskId = null;
+      $('#create-task-list-modal').modal('show');
+    },
+    showModalForEdit: function () {
       $('#create-task-list-modal').modal('show');
     },
     hideModal: function () {
       $('#create-task-list-modal').modal('hide');
     },
     loadFromTask: function (task) {
+      this.editingTaskId = task.task_id || null;
       const data = task.attachment_data || task.detail || {};
+      // Check if mant_config is under scenario_config (for running tasks)
+      if (!data.mant_config && data.scenario_config && data.scenario_config.mant_config) {
+        data.mant_config = data.scenario_config.mant_config;
+      }
       this.selectedExecuteMode = task.task_execute_mode || 3;
       this.selectedScenario = data.scenario || 1;
       this.cureAsapConditions = data.cure_asap_conditions || this.cureAsapConditions;
@@ -4010,6 +4053,7 @@ export default {
       }
       this.supportCardLevel = data.follow_support_card_level || this.supportCardLevel;
       this.extraRace = data.extra_race_list || [];
+      this.skipTrainingOnRaceDay = (data.skip_training_on_race_day === true);
       this.clockUseLimit = data.clock_use_limit !== undefined ? data.clock_use_limit : this.clockUseLimit;
       this.restTreshold = data.rest_threshold || data.rest_treshold || this.restTreshold;
       this.compensateFailure = data.compensate_failure !== false;
@@ -4033,6 +4077,13 @@ export default {
         this.selectedRaceTactic1 = data.tactic_list[0];
         this.selectedRaceTactic2 = data.tactic_list[1];
         this.selectedRaceTactic3 = data.tactic_list[2];
+      }
+      if ('tactic_actions' in data) {
+        if (data.tactic_actions && data.tactic_actions.length > 0) {
+          this.raceTacticConditions = data.tactic_actions;
+        } else {
+          this.raceTacticConditions = [];
+        }
       }
       this.motivationThresholdYear1 = data.motivation_threshold_year1 || 3;
       this.motivationThresholdYear2 = data.motivation_threshold_year2 || 4;
@@ -4062,34 +4113,34 @@ export default {
       if (data.pal_friendship_score) this.palFriendshipScore = [...data.pal_friendship_score];
       if (data.pal_card_multiplier !== undefined) this.palCardMultiplier = data.pal_card_multiplier;
       if (data.npc_score_value && Array.isArray(data.npc_score_value) && data.npc_score_value.length >= 5) {
-        this.npcScoreJunior = [...data.npc_score_value[0]];
-        this.npcScoreClassic = [...data.npc_score_value[1]];
-        this.npcScoreSenior = [...data.npc_score_value[2]];
-        this.npcScoreSeniorAfterSummer = [...data.npc_score_value[3]];
-        this.npcScoreFinale = [...data.npc_score_value[4]];
+        if (Array.isArray(data.npc_score_value[0])) this.npcScoreJunior = [...data.npc_score_value[0]];
+        if (Array.isArray(data.npc_score_value[1])) this.npcScoreClassic = [...data.npc_score_value[1]];
+        if (Array.isArray(data.npc_score_value[2])) this.npcScoreSenior = [...data.npc_score_value[2]];
+        if (Array.isArray(data.npc_score_value[3])) this.npcScoreSeniorAfterSummer = [...data.npc_score_value[3]];
+        if (Array.isArray(data.npc_score_value[4])) this.npcScoreFinale = [...data.npc_score_value[4]];
       }
       if (data.extra_weight && data.extra_weight.length >= 3) {
-        this.extraWeight1 = data.extra_weight[0].map(v => Math.max(-1, Math.min(1, v)));
-        this.extraWeight2 = data.extra_weight[1].map(v => Math.max(-1, Math.min(1, v)));
-        this.extraWeight3 = data.extra_weight[2].map(v => Math.max(-1, Math.min(1, v)));
-        if (data.extra_weight.length >= 4) {
+        if (Array.isArray(data.extra_weight[0])) this.extraWeight1 = data.extra_weight[0].map(v => Math.max(-1, Math.min(1, v)));
+        if (Array.isArray(data.extra_weight[1])) this.extraWeight2 = data.extra_weight[1].map(v => Math.max(-1, Math.min(1, v)));
+        if (Array.isArray(data.extra_weight[2])) this.extraWeight3 = data.extra_weight[2].map(v => Math.max(-1, Math.min(1, v)));
+        if (data.extra_weight.length >= 4 && Array.isArray(data.extra_weight[3])) {
           this.extraWeightSummer = data.extra_weight[3].map(v => Math.max(-1, Math.min(1, v)));
         }
       }
       if (data.base_score) this.baseScore = [...data.base_score];
       if (data.spirit_explosion && data.spirit_explosion.length >= 5) {
-        this.spiritExplosionJunior = data.spirit_explosion[0].map(v => Math.max(-1, Math.min(1, v)));
-        this.spiritExplosionClassic = data.spirit_explosion[1].map(v => Math.max(-1, Math.min(1, v)));
-        this.spiritExplosionSenior = data.spirit_explosion[2].map(v => Math.max(-1, Math.min(1, v)));
-        this.spiritExplosionSeniorAfterSummer = data.spirit_explosion[3].map(v => Math.max(-1, Math.min(1, v)));
-        this.spiritExplosionFinale = data.spirit_explosion[4].map(v => Math.max(-1, Math.min(1, v)));
+        if (Array.isArray(data.spirit_explosion[0])) this.spiritExplosionJunior = data.spirit_explosion[0].map(v => Math.max(-1, Math.min(1, v)));
+        if (Array.isArray(data.spirit_explosion[1])) this.spiritExplosionClassic = data.spirit_explosion[1].map(v => Math.max(-1, Math.min(1, v)));
+        if (Array.isArray(data.spirit_explosion[2])) this.spiritExplosionSenior = data.spirit_explosion[2].map(v => Math.max(-1, Math.min(1, v)));
+        if (Array.isArray(data.spirit_explosion[3])) this.spiritExplosionSeniorAfterSummer = data.spirit_explosion[3].map(v => Math.max(-1, Math.min(1, v)));
+        if (Array.isArray(data.spirit_explosion[4])) this.spiritExplosionFinale = data.spirit_explosion[4].map(v => Math.max(-1, Math.min(1, v)));
       }
       if (data.score_value && data.score_value.length >= 5) {
-        this.scoreValueJunior = [...data.score_value[0]];
-        this.scoreValueClassic = [...data.score_value[1]];
-        this.scoreValueSenior = [...data.score_value[2]];
-        this.scoreValueSeniorAfterSummer = [...data.score_value[3]];
-        this.scoreValueFinale = [...data.score_value[4]];
+        if (Array.isArray(data.score_value[0])) this.scoreValueJunior = [...data.score_value[0]];
+        if (Array.isArray(data.score_value[1])) this.scoreValueClassic = [...data.score_value[1]];
+        if (Array.isArray(data.score_value[2])) this.scoreValueSenior = [...data.score_value[2]];
+        if (Array.isArray(data.score_value[3])) this.scoreValueSeniorAfterSummer = [...data.score_value[3]];
+        if (Array.isArray(data.score_value[4])) this.scoreValueFinale = [...data.score_value[4]];
         if (this.selectedScenario === 2) {
           if (this.scoreValueJunior.length >= 5) { this.specialJunior = this.scoreValueJunior[4]; this.scoreValueJunior = this.scoreValueJunior.slice(0, 4); }
           if (this.scoreValueClassic.length >= 5) { this.specialClassic = this.scoreValueClassic[4]; this.scoreValueClassic = this.scoreValueClassic.slice(0, 4); }
@@ -4324,6 +4375,7 @@ export default {
         motivation_threshold_year1: this.motivationThresholdYear1,
         motivation_threshold_year2: this.motivationThresholdYear2,
         motivation_threshold_year3: this.motivationThresholdYear3,
+        skip_training_on_race_day: this.skipTrainingOnRaceDay,
         prioritize_recreation: this.prioritizeRecreation,
 
         pal_selected: this.palSelected,
@@ -4490,7 +4542,9 @@ export default {
         motivation_threshold_year1: this.motivationThresholdYear1,
         motivation_threshold_year2: this.motivationThresholdYear2,
         motivation_threshold_year3: this.motivationThresholdYear3,
+        skip_training_on_race_day: this.skipTrainingOnRaceDay,
         prioritize_recreation: this.prioritizeRecreation,
+        showAdvanceOption: this.showAdvanceOption,
         pal_selected: this.palSelected,
         pal_card_store: Object.fromEntries(Object.entries(this.palCardStore).filter(([k, v]) => (Array.isArray(v) && v.length > 0) || (typeof v === 'object' && v !== null && v.group))),
         pal_friendship_score: [...this.palFriendshipScore],

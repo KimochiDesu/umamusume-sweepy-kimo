@@ -364,12 +364,76 @@ if __name__ == '__main__':
         was_active = load_scheduler_state()
     except Exception:
         pass
-    
+
+    checkpoint_found = False
+    try:
+        from module.umamusume.persistence import load_checkpoint
+        checkpoint_data = load_checkpoint()
+        if checkpoint_data:
+            checkpoint_found = True
+            print("=" * 60)
+            print("CHECKPOINT DETECTED - Resuming interrupted training")
+            print("=" * 60)
+
+            if not restored:
+                print("No saved task found, creating task from checkpoint...")
+                try:
+                    import bot.engine.ctrl as ctrl
+                    from bot.base.task import TaskExecuteMode
+                    from module.umamusume.task import UmamusumeTaskType
+
+                    task_config = checkpoint_data.get('task_config', {})
+                    scenario_type = checkpoint_data.get('scenario_type', 1)
+
+                    attachment_data = {
+                        'scenario': scenario_type,
+                        'expect_attribute': task_config.get('expect_attribute'),
+                        'follow_support_card_name': task_config.get('follow_support_card_name', ''),
+                        'follow_support_card_level': task_config.get('follow_support_card_level', 0),
+                        'extra_race_list': task_config.get('extra_race_list', []),
+                        'learn_skill_list': task_config.get('learn_skill_list', []),
+                        'learn_skill_blacklist': task_config.get('learn_skill_blacklist', []),
+                        'tactic_list': task_config.get('tactic_list', []),
+                        'tactic_actions': task_config.get('tactic_actions', []),
+                        'clock_use_limit': task_config.get('clock_use_limit', 0),
+                        'learn_skill_threshold': task_config.get('learn_skill_threshold', 180),
+                        'learn_skill_only_user_provided': task_config.get('learn_skill_only_user_provided', False),
+                        'allow_recover_tp': task_config.get('allow_recover_tp', False),
+                        'extra_weight': task_config.get('extra_weight', []),
+                        'manual_purchase_at_end': task_config.get('manual_purchase_at_end', False),
+                        'override_insufficient_fans_forced_races': task_config.get('override_insufficient_fans_forced_races', False),
+                        'use_last_parents': task_config.get('use_last_parents', False),
+                        'rest_threshold': task_config.get('rest_threshold', 48),
+                        'motivation_threshold_year1': task_config.get('motivation_threshold_year1', 3),
+                        'motivation_threshold_year2': task_config.get('motivation_threshold_year2', 4),
+                        'motivation_threshold_year3': task_config.get('motivation_threshold_year3', 4),
+                        'skip_training_on_race_day': task_config.get('skip_training_on_race_day', False),
+                        'prioritize_recreation': task_config.get('prioritize_recreation', False),
+                        'pal_name': task_config.get('pal_name', ''),
+                        'pal_thresholds': task_config.get('pal_thresholds', []),
+                        'spirit_explosion': task_config.get('spirit_explosion', [0.16, 0.16, 0.16, 0.06, 0.11]),
+                    }
+
+                    ctrl.add_task(
+                        'umamusume',
+                        TaskExecuteMode.TASK_EXECUTE_MODE_ONE_TIME,
+                        UmamusumeTaskType.UMAMUSUME_TASK_TYPE_CULTIVATE.value,
+                        'Resumed Training',
+                        None,
+                        attachment_data
+                    )
+                    restored = True
+                    print("Task created from checkpoint")
+                except Exception as e:
+                    print(f"Failed to create task from checkpoint: {e}")
+    except Exception as e:
+        print(f"Checkpoint check failed: {e}")
+
     scheduler_thread = threading.Thread(target=scheduler.init, args=())
     scheduler_thread.start()
-    
+
     try:
-        if was_active is True or (was_active is None and restored):
+        if checkpoint_found or was_active is True or (was_active is None and restored):
             scheduler.start()
     except Exception:
         pass

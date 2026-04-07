@@ -1,0 +1,25 @@
+{
+  "permissions": {
+    "allow": [
+      "Bash(netstat:*)",
+      "Bash(findstr:*)",
+      "Bash(tasklist:*)",
+      "Bash(taskkill /F /PID 17924)",
+      "Bash(powershell -Command \"Stop-Process -Id 17924 -Force\")",
+      "Bash(timeout /t 3 /nobreak)",
+      "WebFetch(domain:github.com)",
+      "Bash(if exist C:Repositoriesumamusume-sweepytraining_checkpoint.json del C:Repositoriesumamusume-sweepytraining_checkpoint.json)",
+      "Bash(del C:Repositoriesumamusume-sweepytraining_checkpoint.json)",
+      "Bash(cmd /c \"del /F /Q C:\\\\Repositories\\\\umamusume-sweepy\\\\training_checkpoint.json 2>nul || echo No checkpoint file found\")",
+      "Bash(npm --version:*)",
+      "Bash(npm install)",
+      "Bash(npm run build:*)",
+      "WebFetch(domain:patch-diff.githubusercontent.com)",
+      "Bash(dir:*)",
+      "Bash(git fetch:*)",
+      "Bash(git add:*)",
+      "Bash(git commit:*)",
+      "Bash(if exist nul del nul)"
+    ]
+  }
+}
