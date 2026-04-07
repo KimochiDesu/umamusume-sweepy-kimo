@@ -13,41 +13,11 @@ import bot.base.log as logger
 from module.umamusume.scenario.mant.shop import (
     SHOP_ITEM_NAMES, EFFECT_PREFIXES,
     SB_X, SB_X_MIN, SB_X_MAX,
-    gauss_scan_x,
+    _gauss_scan_x,
 )
 
 
 log = logger.get_logger(__name__)
-
-
-ENERGY_ITEMS = {
-    "Vita 20": 35, "Vita 40": 55, "Vita 65": 75,
-    "Energy Drink MAX": 30, "Energy Drink MAX EX": 50,
-}
-
-ENERGY_RECOVERY_ITEMS = list(ENERGY_ITEMS.keys())
-
-ENERGY_ITEM_SKIP_FAST_PATH_THRESHOLD = 3
-
-CHARM_ITEM = 'Good-Luck Charm'
-
-INSTANT_USE_ITEMS = [
-    'Grilled Carrots',
-    'Yummy Cat Food',
-    'Energy Drink MAX EX',
-    'Pretty Mirror',
-    "Scholar's Hat",
-    "Reporter's Binoculars",
-    'Master Practice Guide',
-]
-
-ONE_TIME_BUFF_ITEMS = {
-    'Pretty Mirror',
-    "Scholar's Hat",
-    "Reporter's Binoculars",
-    'Master Practice Guide',
-}
-
 
 MAX_ENERGY_OCR_X1 = 456
 MAX_ENERGY_OCR_Y1 = 219
@@ -494,7 +464,7 @@ def scan_inventory(ctx, stop_when_found=None):
     est_frames = total_content / desired_shift
     swipe_dur = max(5000, min(25000, int(est_frames * 600)))
 
-    scan_x_end = gauss_scan_x()
+    scan_x_end = _gauss_scan_x()
     swipe_cmd = f"shell input swipe {SB_X} {start_y} {scan_x_end} {INV_TRACK_BOT} {swipe_dur}"
     proc = ctx.ctrl.execute_adb_shell(swipe_cmd, False)
 
@@ -656,18 +626,40 @@ def try_click_item_plus_once(ctx, item_name: str) -> bool:
         frame = ctx.ctrl.get_screen()
         if frame is None:
             continue
-
-        y = find_item_y_on_current_screen(frame, item_name)
-        if y is not None and 130 < y < 1030:
-            plus_x = 648
-            plus_y = int(round(y + 48))
-
-            if is_plus_disabled(frame, plus_x, plus_y):
+        items = classify_names_only(frame)
+        target_y = None
+        for name, score, abs_y in items:
+            if name == item_name:
+                target_y = abs_y
+                break
+        if target_y is not None and 130 < target_y < 1030:
+            plus_buttons = find_plus_buttons(frame)
+            if not plus_buttons:
+                log.warning(f"No + buttons found on screen")
+                plus_x = 648
+                plus_y = int(round(target_y + 48))
+                ctx.ctrl.execute_adb_shell(f"shell input tap {plus_x} {plus_y}", True)
+                time.sleep(0.25)
                 return True
-
-            ctx.ctrl.execute_adb_shell(f"shell input tap {plus_x} {plus_y}", True)
-            time.sleep(0.25)
-            return True
+            best_button = None
+            best_dy = float('inf')
+            for bx, by in plus_buttons:
+                dy = abs(by - target_y)
+                if dy < best_dy:
+                    best_dy = dy
+                    best_button = (bx, by)
+            if best_button and best_dy < 80:
+                log.info(f"Clicking + for '{item_name}' at ({best_button[0]}, {best_button[1]}), dy={best_dy:.1f}")
+                ctx.ctrl.execute_adb_shell(f"shell input tap {best_button[0]} {best_button[1]}", True)
+                time.sleep(0.25)
+                return True
+            else:
+                log.warning(f"No + button found near '{item_name}' (y={target_y:.1f}), best dy={best_dy:.1f}")
+                plus_x = 648
+                plus_y = int(round(target_y + 48))
+                ctx.ctrl.execute_adb_shell(f"shell input tap {plus_x} {plus_y}", True)
+                time.sleep(0.25)
+                return True
 
         img_rgb = cv2.cvtColor(frame, cv2.COLOR_BGR2RGB)
         thumb = inv_find_thumb(img_rgb)
@@ -757,31 +749,12 @@ def open_items_panel(ctx):
 
 
 def close_items_panel(ctx):
-    for attempt in range(10):
+    for _ in range(10):
         frame = ctx.ctrl.get_screen()
         if not is_items_panel_open(frame) and not has_use_training_items_button(frame):
-            # Panel is closed, add small delay to ensure UI settles
-            time.sleep(0.5)
             return
-        
-        # Click close button once
         ctx.ctrl.execute_adb_shell("shell input tap 200 1205", True)
-        
-        # Wait longer for panel close animation to complete
-        time.sleep(1.0)
-        
-        # Check if panel actually closed before attempting more clicks
-        frame = ctx.ctrl.get_screen()
-        if not is_items_panel_open(frame) and not has_use_training_items_button(frame):
-            # Successfully closed, add small delay to ensure UI settles
-            time.sleep(0.5)
-            return
-        
-        # Panel still open, log and retry
-        if attempt < 9:
-            log.debug(f"Inventory panel still open after close attempt {attempt + 1}, retrying...")
-    
-    log.warning("Failed to close inventory panel after 10 attempts")
+        time.sleep(0.3)
 
 
 def use_training_item(ctx, item_name, quantity=1):
@@ -817,6 +790,137 @@ def use_training_item(ctx, item_name, quantity=1):
         if not clicked_use and is_items_panel_open(frame):
             ctx.ctrl.execute_adb_shell("shell input tap 530 1205", True)
 
+    return True
+
+
+INSTANT_USE_ITEMS = [
+    'Grilled Carrots',
+    'Yummy Cat Food',
+    'Energy Drink MAX EX',
+    'Pretty Mirror',
+    "Scholar's Hat",
+    "Reporter's Binoculars",
+    'Master Practice Guide',
+]
+
+ONE_TIME_BUFF_ITEMS = {
+    'Pretty Mirror',
+    "Scholar's Hat",
+    "Reporter's Binoculars",
+    'Master Practice Guide',
+}
+
+ENERGY_RECOVERY_ITEMS = {
+    'Vita 20', 'Vita 40', 'Vita 65', 'Royal Kale Juice',
+    'Energy Drink MAX', 'Energy Drink MAX EX',
+}
+CHARM_ITEM = 'Good-Luck Charm'
+ENERGY_ITEM_SKIP_FAST_PATH_THRESHOLD = 1
+
+ENERGY_ITEMS = {
+    'Vita 20': 20,
+    'Vita 40': 40,
+    'Vita 65': 65,
+    'Royal Kale Juice': 100,
+}
+
+KALE_MOOD_PENALTY = 20
+ENERGY_USE_MAX = 50
+ENERGY_RESULT_MIN = 40
+ENERGY_SCORE_THRESHOLD = 20
+
+OVERFLOW_PENALTY = {0: 1.0, 1: 0.9, 2: 0.8, 3: 0.8, 4: 0.8}
+
+
+def calc_effective_energy(item_name, raw_energy, current_energy, period_idx, max_energy=100):
+    effective = raw_energy
+    overflow = max(0, current_energy + raw_energy - max_energy)
+    penalty_rate = OVERFLOW_PENALTY.get(period_idx, 0.8)
+    effective -= overflow * penalty_rate
+    if item_name == 'Royal Kale Juice':
+        effective -= KALE_MOOD_PENALTY
+    return effective
+
+
+LOW_ENERGY_THRESHOLD = 5
+
+
+def pick_best_energy_item(ctx):
+    owned = getattr(ctx.cultivate_detail, 'mant_owned_items', [])
+    owned_map = {n: q for n, q in owned}
+    current_energy = getattr(ctx.cultivate_detail.turn_info, 'cached_energy', 0)
+    if current_energy is None:
+        return None
+    current_energy = int(current_energy)
+    max_energy = getattr(ctx.cultivate_detail, 'mant_max_energy', 100)
+    energy_use_max = max_energy * 0.5
+    energy_result_min = max_energy * 0.4
+    energy_score_threshold = max_energy * 0.2
+    if current_energy >= energy_use_max:
+        return None
+
+    date = getattr(ctx.cultivate_detail.turn_info, 'date', 0)
+    from module.umamusume.constants.game_constants import get_date_period_index
+    period_idx = get_date_period_index(date)
+
+    best_item = None
+    best_effective = 0
+    for item_name, raw_energy in ENERGY_ITEMS.items():
+        if owned_map.get(item_name, 0) <= 0:
+            continue
+        result_energy = current_energy + raw_energy
+        if result_energy < energy_result_min:
+            continue
+        effective = calc_effective_energy(item_name, raw_energy, current_energy, period_idx, max_energy)
+        if effective > best_effective:
+            best_effective = effective
+            best_item = item_name
+    if best_effective < energy_score_threshold:
+        return None
+    return best_item
+
+
+def plan_low_energy_recovery(current_energy, owned_map, max_energy=100):
+    available = []
+    for item_name, raw_energy in sorted(ENERGY_ITEMS.items(), key=lambda x: x[1]):
+        qty = owned_map.get(item_name, 0)
+        if qty > 0:
+            available.append((item_name, raw_energy, qty))
+
+    if not available:
+        return []
+
+    plan = []
+    energy = current_energy
+
+    for item_name, raw_energy, qty in reversed(available):
+        if energy >= max_energy:
+            break
+        while qty > 0 and energy + raw_energy <= max_energy:
+            plan.append(item_name)
+            energy += raw_energy
+            qty -= 1
+
+    if not plan:
+        smallest = available[0]
+        plan.append(smallest[0])
+
+    result = []
+    seen = {}
+    for name in plan:
+        if name not in seen:
+            seen[name] = 0
+        seen[name] += 1
+    for name, count in seen.items():
+        result.append((name, count))
+
+    return result
+
+
+def use_item_and_update_inventory(ctx, item_name):
+    ok = use_training_item(ctx, item_name, 1)
+    if not ok:
+        return False
     update_max_energy_from_ocr(ctx)
     close_items_panel(ctx)
     owned = getattr(ctx.cultivate_detail, 'mant_owned_items', [])
@@ -828,26 +932,6 @@ def use_training_item(ctx, item_name, quantity=1):
     log_detected_items(updated)
     log.info(f"used {item_name}")
     return True
-
-
-def use_item_and_update_inventory(ctx, item_name: str) -> bool:
-    """
-    Thin wrapper around use_training_item that keeps mant_owned_items in sync.
-    use_training_item already decrements the inventory on success, so this
-    function simply delegates to it and returns the result.
-    Returns True if the item was used successfully, False otherwise.
-    """
-    owned = getattr(ctx.cultivate_detail, 'mant_owned_items', [])
-    owned_map = {n: q for n, q in owned}
-    if owned_map.get(item_name, 0) <= 0:
-        log.warning(f"use_item_and_update_inventory: '{item_name}' not in inventory, skipping")
-        return False
-    result = use_training_item(ctx, item_name, quantity=1)
-    if result:
-        log.info(f"use_item_and_update_inventory: used '{item_name}' successfully")
-    else:
-        log.warning(f"use_item_and_update_inventory: failed to use '{item_name}'")
-    return result
 
 
 def handle_training_whistle(ctx):
@@ -942,7 +1026,7 @@ def handle_energy_recovery(ctx):
         if energy > limit:
             break
 
-    if not used_any and energy < limit:
+    if not used_any:
         smallest = available[-1]
         ok = use_item_and_update_inventory(ctx, smallest[0])
         if ok:
@@ -1487,12 +1571,11 @@ def item_loop(ctx):
 def should_skip_fast_path(ctx):
     owned = getattr(ctx.cultivate_detail, 'mant_owned_items', [])
     owned_map = {n: q for n, q in owned}
-    has_charm_item = owned_map.get('Good-Luck Charm', 0) > 0
-    energy_items = ('Vita 20', 'Vita 40', 'Vita 65', 'Energy Drink MAX', 'Energy Drink MAX EX')
-    energy_count = sum(owned_map.get(item, 0) for item in energy_items)
+    has_charm_item = owned_map.get(CHARM_ITEM, 0) > 0
+    energy_count = sum(owned_map.get(item, 0) for item in ENERGY_RECOVERY_ITEMS)
     if has_charm_item:
         return True
-    if energy_count >= 3:
+    if energy_count >= ENERGY_ITEM_SKIP_FAST_PATH_THRESHOLD:
         return True
     return False
 
@@ -1508,25 +1591,6 @@ def handle_energy_drink_max_before_race(ctx):
     if int(current_energy) > 1:
         return False
     return use_item_and_update_inventory(ctx, 'Energy Drink MAX')
-
-
-def handle_energy_drink_fallback(ctx):
-    """Try Energy Drink MAX first, then fall back to other energy items if unavailable."""
-    owned = getattr(ctx.cultivate_detail, 'mant_owned_items', [])
-    owned_map = {n: q for n, q in owned}
-    current_energy = getattr(ctx.cultivate_detail.turn_info, 'cached_energy', None)
-    if current_energy is None:
-        return False
-    if int(current_energy) > 1:
-        return False
-    # Try Energy Drink MAX first
-    if owned_map.get('Energy Drink MAX', 0) > 0:
-        return use_item_and_update_inventory(ctx, 'Energy Drink MAX')
-    # Fallback: try other energy items in priority order
-    for item_name in ('Energy Drink MAX EX', 'Vita 65', 'Vita 40', 'Vita 20'):
-        if owned_map.get(item_name, 0) > 0:
-            return use_item_and_update_inventory(ctx, item_name)
-    return False
 
 
 def handle_glow_sticks_before_race(ctx):

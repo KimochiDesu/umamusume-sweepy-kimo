@@ -89,6 +89,8 @@ def handle_mant_turn_start(ctx, current_date):
     chunk = current_shop_chunk(current_date)
     last_chunk = getattr(ctx.cultivate_detail, 'mant_shop_last_chunk', -1)
 
+    ctx.cultivate_detail.mant_shop_handled_this_turn = False
+
     if chunk != last_chunk:
         ctx.cultivate_detail.mant_shop_items = []
     else:
@@ -364,65 +366,47 @@ def handle_mant_shop_scan(ctx, current_date):
                              if buyable and name not in bought_set]
                 log_detected_shop_items(remaining)
 
-                # --- Post-purchase verification (Solution 1) ---
+                # --- Post-purchase verification ---
+                # Scan inventory fresh (stale data from before shop visit is useless)
+                from module.umamusume.scenario.mant.inventory import open_items_panel, close_items_panel, scan_inventory
+                from module.umamusume.context import log_detected_items
+
                 # Items that are used instantly after purchase (not tracked in inventory)
-                INSTANT_USE_ITEMS = {
-                    'Speed Scroll', 'Stamina Scroll', 'Power Scroll', 'Guts Scroll', 'Wit Scroll',
-                    'Speed Training Application', 'Stamina Training Application',
-                    'Power Training Application', 'Guts Training Application', 'Wit Training Application',
-                }
-                
-                # Get current inventory
+                INSTANT_USE_PATTERNS = ('Scroll', 'Training Application', 'Manual')
+                is_instant = lambda name: any(p in name for p in INSTANT_USE_PATTERNS)
+
+                verify_targets = [t for t in targets if not is_instant(t)]
                 owned = getattr(ctx.cultivate_detail, 'mant_owned_items', [])
                 owned_map = {n: q for n, q in owned}
-                
-                # Check which non-instant-use items were planned but aren't in inventory
-                verify_targets = [t for t in targets if t not in INSTANT_USE_ITEMS]
-                missing_items = []
-                for item_name in verify_targets:
-                    if owned_map.get(item_name, 0) <= 0:
-                        missing_items.append(item_name)
-                
-                if missing_items:
-                    log.warning(f"Post-purchase check: missing items {missing_items} - retrying shop purchase")
-                    # Force rescan inventory to get latest state
-                    from module.umamusume.scenario.mant.inventory import open_items_panel, close_items_panel
-                    from module.umamusume.context import log_detected_items
-                    
+                # Only items that were missing from stale inventory need a fresh scan
+                possibly_missing = [t for t in verify_targets if owned_map.get(t, 0) <= 0]
+                if possibly_missing:
                     opened = open_items_panel(ctx)
                     if opened:
-                        from module.umamusume.scenario.mant.inventory import scan_inventory
                         owned = scan_inventory(ctx)
                         ctx.cultivate_detail.mant_owned_items = owned
                         ctx.cultivate_detail.mant_inventory_scanned = True
                         log_detected_items(owned)
                         close_items_panel(ctx)
-                        
-                        # Re-check with fresh inventory
                         owned_map = {n: q for n, q in owned}
-                        missing_items = [t for t in verify_targets if owned_map.get(t, 0) <= 0]
-                        
-                        if missing_items:
-                            log.info(f"Retry: attempting to purchase {missing_items}")
-                            # Rescan shop and retry purchase
-                            from module.umamusume.scenario.mant.shop import scan_mant_shop
-                            scan_result = scan_mant_shop(ctx)
-                            if scan_result is not None:
-                                retry_items, retry_ratio, retry_drag_ratio, retry_first_gy = scan_result
-                                retry_bought, _ = buy_shop_items(ctx, missing_items, retry_items, retry_ratio, retry_drag_ratio, retry_first_gy)
-                                if retry_bought:
-                                    log.info(f"Retry successful: purchased {missing_items}")
-                                    ctx.cultivate_detail.mant_inventory_rescan_pending = True
-                                    total_spent_retry = sum(SHOP_ITEM_COSTS.get(t, 0) for t in missing_items)
-                                    ctx.cultivate_detail.mant_coins = max(0, ctx.cultivate_detail.mant_coins - total_spent_retry)
-                                else:
-                                    log.warning(f"Retry failed: could not purchase {missing_items} - continuing anyway")
-                            else:
-                                log.warning(f"Retry: shop scan failed - continuing anyway")
+                        possibly_missing = [t for t in verify_targets if owned_map.get(t, 0) <= 0]
+
+                if possibly_missing:
+                    log.warning(f"Post-purchase check: truly missing {possibly_missing} - retrying shop")
+                    from module.umamusume.scenario.mant.shop import scan_mant_shop
+                    scan_result = scan_mant_shop(ctx)
+                    if scan_result is not None:
+                        retry_items, retry_ratio, retry_drag_ratio, retry_first_gy = scan_result
+                        retry_bought, _ = buy_shop_items(ctx, possibly_missing, retry_items, retry_ratio, retry_drag_ratio, retry_first_gy)
+                        if retry_bought:
+                            log.info(f"Retry successful: purchased {possibly_missing}")
+                            ctx.cultivate_detail.mant_inventory_rescan_pending = True
+                            total_spent_retry = sum(SHOP_ITEM_COSTS.get(t, 0) for t in possibly_missing)
+                            ctx.cultivate_detail.mant_coins = max(0, ctx.cultivate_detail.mant_coins - total_spent_retry)
                         else:
-                            log.info(f"Post-purchase check: items found in inventory after all")
+                            log.warning(f"Retry failed: could not purchase {possibly_missing} - continuing anyway")
                     else:
-                        log.warning(f"Post-purchase check: could not open inventory - continuing anyway")
+                        log.warning(f"Retry: shop scan failed - continuing anyway")
                 else:
                     log.info("Post-purchase check: all planned items found in inventory")
 
@@ -788,25 +772,27 @@ def execute_cleat_buy(ctx, cleat_name, cost):
 
 
 def handle_mant_main_menu(ctx, img, current_date):
+    from module.umamusume.scenario.mant.shop import is_shop_scan_turn
     from module.umamusume.constants.game_constants import is_summer_camp_period
-
-    if handle_mant_inventory_rescan_if_pending(ctx, current_date):
-        return True
-
-    if handle_mant_inventory_scan(ctx, current_date):
-        return True
-
     from module.umamusume.scenario.mant.inventory import (
         has_instant_use_items, handle_instant_use_items, handle_cupcake_use
     )
-    if has_instant_use_items(ctx):
-        handle_instant_use_items(ctx)
-        ctx.cultivate_detail.turn_info.parse_main_menu_finish = False
+    is_shop_turn = is_shop_scan_turn(current_date)
 
-    if not getattr(ctx.cultivate_detail.turn_info, 'mant_cupcake_checked', False):
-        ctx.cultivate_detail.turn_info.mant_cupcake_checked = True
-        if handle_cupcake_use(ctx):
+    if not is_shop_turn:
+        if handle_mant_inventory_rescan_if_pending(ctx, current_date):
             return True
+        if handle_mant_inventory_scan(ctx, current_date):
+            return True
+
+        if has_instant_use_items(ctx):
+            handle_instant_use_items(ctx)
+            ctx.cultivate_detail.turn_info.parse_main_menu_finish = False
+
+        if not getattr(ctx.cultivate_detail.turn_info, 'mant_cupcake_checked', False):
+            ctx.cultivate_detail.turn_info.mant_cupcake_checked = True
+            if handle_cupcake_use(ctx):
+                return True
 
     if not getattr(ctx.cultivate_detail.turn_info, 'mant_main_menu_coins_read', False):
         is_summer = is_summer_camp_period(current_date)
@@ -830,6 +816,18 @@ def handle_mant_main_menu(ctx, img, current_date):
 
     if handle_mant_cleat_shop_buy(ctx, current_date):
         return True
+
+    # On shop turns: handle instant-use items and cupcakes AFTER shop,
+    # so inventory/panel activity does not block the shop visit.
+    if is_shop_turn:
+        if has_instant_use_items(ctx):
+            handle_instant_use_items(ctx)
+            ctx.cultivate_detail.turn_info.parse_main_menu_finish = False
+
+        if not getattr(ctx.cultivate_detail.turn_info, 'mant_cupcake_checked', False):
+            ctx.cultivate_detail.turn_info.mant_cupcake_checked = True
+            if handle_cupcake_use(ctx):
+                return True
 
     return False
 

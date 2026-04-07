@@ -200,7 +200,7 @@ def scroll_to_top(ctx):
         sb_drag(ctx, (thumb[0] + thumb[1]) // 2, TRACK_TOP)
 
 
-def gauss_scan_x():
+def _gauss_scan_x():
     mu = SCREEN_WIDTH * 0.667
     sigma = SCREEN_WIDTH * 0.194
     while True:
@@ -215,14 +215,33 @@ def is_effect_text(text):
     return any(lower.startswith(p) for p in EFFECT_PREFIXES)
 
 
-def is_purchased(frame, item_y):
-    cb_y = int(item_y) + 10
-    roi = frame[max(0, cb_y):min(frame.shape[0], cb_y + 10), CHECKBOX_FILL_X1:CHECKBOX_FILL_X2]
-    if roi.size == 0:
-        return False
-    gray = cv2.cvtColor(roi, cv2.COLOR_BGR2GRAY)
-    mean_val = float(cv2.mean(gray)[0])
-    return mean_val < 120
+def find_shop_checkmarks(frame):
+    from module.umamusume.asset.template import REF_MANT_SHOP_CHECKMARK
+    template = cv2.imread(REF_MANT_SHOP_CHECKMARK.template_path)
+    if template is None:
+        return []
+    gray = cv2.cvtColor(frame, cv2.COLOR_BGR2GRAY)
+    tmpl_gray = cv2.cvtColor(template, cv2.COLOR_BGR2GRAY)
+    th, tw = tmpl_gray.shape[:2]
+    result = cv2.matchTemplate(gray, tmpl_gray, cv2.TM_CCOEFF_NORMED)
+    threshold = 0.8
+    loc = np.where(result >= threshold)
+    marks = []
+    for pt in zip(*loc[::-1]):
+        cx = pt[0] + tw // 2
+        cy = pt[1] + th // 2
+        if any(abs(cx - mx) < 10 and abs(cy - my) < 10 for mx, my in marks):
+            continue
+        marks.append((cx, cy))
+    return marks
+
+
+def is_buyable(frame, item_y):
+    marks = find_shop_checkmarks(frame)
+    for mx, my in marks:
+        if abs(my - item_y) < 50:
+            return True
+    return False
 
 
 def classify_items_in_frame(frame):
@@ -401,37 +420,7 @@ def dedup_detections(all_detections, captured_frames):
         items_list.append((winner, name_best_conf[winner], avg_gy, winner_turns, winner_buyable))
 
     items_list.sort(key=lambda x: x[2])
-
-    # Secondary deduplication: merge same-name items within proximity
-    # This handles cases where scroll offset calculation was imperfect
-    NAME_DEDUP_THRESHOLD = 200  # pixels
-    final_items = []
-    used_indices = set()
-
-    for i, (name, conf, gy, turns, bought) in enumerate(items_list):
-        if i in used_indices:
-            continue
-
-        # Find all items with same name within proximity
-        nearby_indices = [i]
-        for j in range(i + 1, len(items_list)):
-            if j in used_indices:
-                continue
-            other_name, other_conf, other_gy, other_turns, other_bought = items_list[j]
-            if other_name == name and abs(other_gy - gy) < NAME_DEDUP_THRESHOLD:
-                nearby_indices.append(j)
-
-        # If multiple detections, pick the one with highest confidence
-        if len(nearby_indices) > 1:
-            best_idx = max(nearby_indices, key=lambda idx: items_list[idx][1])
-            final_items.append(items_list[best_idx])
-            for idx in nearby_indices:
-                used_indices.add(idx)
-        else:
-            final_items.append(items_list[i])
-            used_indices.add(i)
-
-    return final_items
+    return items_list
 
 
 def detect_mant_shop_coins(img):
@@ -529,8 +518,11 @@ def scan_mant_shop(ctx):
     for key, conf, abs_y, turns, buyable in first_results:
         all_detections.append((key, conf, 0, abs_y, turns, buyable))
 
-    scan_x_end = gauss_scan_x()
-    swipe_cmd = f"shell input swipe {SB_X} {start_y} {scan_x_end} {TRACK_BOT} {swipe_dur}"
+    scan_x_end = _gauss_scan_x()
+    swipe_cmd = (
+        "shell input swipe "
+        + str(SB_X) + " " + str(start_y) + " " + str(scan_x_end) + " " + str(TRACK_BOT) + " " + str(swipe_dur)
+    )
     proc = ctx.ctrl.execute_adb_shell(swipe_cmd, False)
 
     time.sleep(0.3)
@@ -646,7 +638,7 @@ EXCHANGE_QTY_X2 = 420
 CHECKBOX_X = 630
 CHECKBOX_FILL_X1 = 615
 CHECKBOX_FILL_X2 = 655
-CHECKBOX_FILL_THRESHOLD = 160  # items below this brightness are greyed-out or purchased
+CHECKBOX_FILL_THRESHOLD = 232
 CONFIRM_BTN_X = 360
 CONFIRM_BTN_Y = 1050
 EXCHANGE_CLOSE_X = 200
@@ -833,15 +825,6 @@ def scan_exchange_complete(ctx):
 
 
 def buy_shop_items(ctx, target_names, items_list, ratio, drag_ratio, first_item_gy):
-    """
-    Purchase target items from the shop using OCR detection while scrolling.
-    
-    Scrolls through the shop list, detects items via OCR on each frame,
-    and clicks checkboxes for wanted items.
-    
-    Returns:
-        (bool, dict): (whether any items were purchased, held_items dict)
-    """
     remaining = Counter(target_names)
     if not remaining:
         ctx.ctrl.click(BACK_BTN_X, BACK_BTN_Y)
@@ -850,40 +833,21 @@ def buy_shop_items(ctx, target_names, items_list, ratio, drag_ratio, first_item_
 
     selected = 0
 
-    # Track clicked items to prevent re-clicking due to scroll movement
-    # Stores (item_name, click_y) tuples
-    clicked_items = []
-    CLICKED_DEDUP_THRESHOLD = 300  # pixels
-
-    # Scroll to top first
     scroll_to_top(ctx)
-    time.sleep(0.5)
 
     img = ctx.ctrl.get_screen()
-    if img is None:
+    if img is None or img.size == 0:
         return False, {}
 
-    # Main loop: scroll and detect items via OCR
-    max_iterations = 100
-    iteration = 0
-    prev_items = set()
-    no_new_items_count = 0
-
-    while iteration < max_iterations and any(v > 0 for v in remaining.values()):
-        iteration += 1
-        frame = ctx.ctrl.get_screen()
-        if frame is None:
+    for _ in range(60):
+        if not any(v > 0 for v in remaining.values()):
             break
 
-        # Detect items on current screen
-        results, _ = classify_items_in_frame(frame)
-        current_items = {item_name for item_name, conf, abs_y, turns, bought in results}
+        frame = ctx.ctrl.get_screen()
+        if frame is None or frame.size == 0:
+            continue
 
-        # Track if we're seeing new items or stuck
-        if current_items == prev_items:
-            no_new_items_count += 1
-        else:
-            no_new_items_count = 0
+        results, _ = classify_items_in_frame(frame)
 
         name_candidates = defaultdict(list)
         for item_name, conf, abs_y, turns, buyable in results:
@@ -892,91 +856,42 @@ def buy_shop_items(ctx, target_names, items_list, ratio, drag_ratio, first_item_
         for lst in name_candidates.values():
             lst.sort()
 
-        prev_items = current_items.copy()
-
-        # Find wanted items on current screen
         clicked_any = False
-        for item_name, conf, abs_y, turns, bought in results:
-            if remaining.get(item_name, 0) <= 0:
-                continue
-            if bought:
-                log.debug(f"  skip {item_name} at y={abs_y:.0f}: already purchased")
-                continue
-
-            # Check if item is buyable
-            if is_unbuyable(frame, abs_y):
-                cb_y = int(abs_y) + 10
-                roi = frame[max(0, cb_y):min(frame.shape[0], cb_y + 10), CHECKBOX_FILL_X1:CHECKBOX_FILL_X2]
-                brightness = float(cv2.mean(cv2.cvtColor(roi, cv2.COLOR_BGR2GRAY))[0]) if roi.size > 0 else -1
-                log.debug(f"  skip {item_name} at y={abs_y:.0f}: unbuyable (brightness={brightness:.0f})")
-                continue
-
-            # Check if we already clicked this item (same name within proximity)
-            click_y = int(abs_y) + 20
-            already_clicked = False
-            for clicked_name, clicked_y in clicked_items:
-                if clicked_name == item_name and abs(click_y - clicked_y) < CLICKED_DEDUP_THRESHOLD:
-                    log.debug(f"  skip {item_name} at y={click_y}: already clicked at y={clicked_y}")
-                    already_clicked = True
+        for item_name, candidates in name_candidates.items():
+            for turns, abs_y in candidates:
+                if remaining.get(item_name, 0) <= 0:
                     break
+                click_y = int(abs_y) + 20
+                ctx.ctrl.click(CHECKBOX_X, click_y)
+                time.sleep(0.3)
+                selected += 1
+                remaining[item_name] -= 1
+                clicked_any = True
 
-            if already_clicked:
-                continue
-
-            # Click the checkbox
-            log.info(f"  purchasing {item_name} at y={click_y}")
-            ctx.ctrl.click(CHECKBOX_X, click_y)
-            time.sleep(0.35)
-            selected += 1
-            remaining[item_name] -= 1
-            clicked_items.append((item_name, click_y))
-            clicked_any = True
-
-        # If we clicked items, check if we're at bottom
         if clicked_any:
-            img_rgb = cv2.cvtColor(frame, cv2.COLOR_BGR2RGB)
-            if at_bottom(img_rgb):
-                break
-            thumb = find_thumb(img_rgb)
-            if thumb is None:
-                break
-            cursor = (thumb[0] + thumb[1]) // 2
-            th = thumb[1] - thumb[0]
-            next_y = min(TRACK_BOT, cursor + max(th // 2, 10))
-            if next_y <= cursor:
-                break
-            sb_drag(ctx, cursor, next_y)
-            time.sleep(0.3)
-        else:
-            # No items to click on this frame, scroll down
-            img_rgb = cv2.cvtColor(frame, cv2.COLOR_BGR2RGB)
-            if at_bottom(img_rgb):
-                # If at bottom and no items to click, try a bit more scrolling then stop
-                if no_new_items_count >= 3:
-                    break
-            thumb = find_thumb(img_rgb)
-            if thumb is None:
-                break
-            cursor = (thumb[0] + thumb[1]) // 2
-            th = thumb[1] - thumb[0]
-            next_y = min(TRACK_BOT, cursor + max(th // 2, 10))
-            if next_y <= cursor:
-                break
-            sb_drag(ctx, cursor, next_y)
-            time.sleep(0.3)
+            continue
+
+        img_rgb = cv2.cvtColor(frame, cv2.COLOR_BGR2RGB)
+        if at_bottom(img_rgb):
+            break
+
+        thumb = find_thumb(img_rgb)
+        if thumb is None:
+            break
+        cursor = (thumb[0] + thumb[1]) // 2
+        th = thumb[1] - thumb[0]
+        next_y = min(TRACK_BOT, cursor + max(th // 2, 10))
+        if next_y <= cursor:
+            break
+        sb_drag(ctx, cursor, next_y)
 
     if selected == 0:
-        log.info("No items purchased - targets may not be visible or buyable")
         ctx.ctrl.click(BACK_BTN_X, BACK_BTN_Y)
         time.sleep(1)
         return False, {}
 
-    # Confirm purchases
-    log.info(f"Confirming purchase of {selected} items")
     ctx.ctrl.click(CONFIRM_BTN_X, CONFIRM_BTN_Y)
-    time.sleep(1.5)
 
-    # Wait for "Exchange Complete" dialog
     from bot.recog.image_matcher import image_match
     from bot.recog.ocr import ocr_line
     from module.umamusume.asset.template import UI_INFO
@@ -986,7 +901,7 @@ def buy_shop_items(ctx, target_names, items_list, ratio, drag_ratio, first_item_
     for _ in range(40):
         time.sleep(0.3)
         screen = ctx.ctrl.get_screen(to_gray=True)
-        if screen is None:
+        if screen is None or screen.size == 0:
             continue
         result = image_match(screen, UI_INFO)
         if result.find_match:
@@ -997,11 +912,6 @@ def buy_shop_items(ctx, target_names, items_list, ratio, drag_ratio, first_item_
             if title_text == "Exchange Complete":
                 exchange_ready = True
                 break
-
-    if exchange_ready:
-        log.info("Exchange complete confirmed")
-    else:
-        log.warning("Exchange completion not confirmed - may have failed")
 
     ctx.ctrl.click(EXCHANGE_CLOSE_X, EXCHANGE_CLOSE_Y)
     time.sleep(0.5)
