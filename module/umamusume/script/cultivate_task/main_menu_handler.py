@@ -100,15 +100,15 @@ def script_cultivate_main_menu(ctx: UmamusumeContext):
         except Exception as e:
             log.debug(f"Checkpoint save failed: {e}")
 
-        # Check if we just came back from a race and should scan shop
-        if is_mant(ctx) and getattr(ctx.cultivate_detail, 'mant_post_race_shop_check', False):
-            ctx.cultivate_detail.mant_post_race_shop_check = False
-            log.info("Post-race shop check triggered - scanning and buying items")
-            from module.umamusume.scenario.mant.main_menu import handle_mant_shop_scan
-            try:
-                handle_mant_shop_scan(ctx, current_date, force_scan=True)
-            except Exception as e:
-                log.warning(f"Post-race shop scan failed: {e}")
+    # Check if we just came back from a race and should scan shop
+    if is_mant(ctx) and getattr(ctx.cultivate_detail, 'mant_post_race_shop_check', False):
+        ctx.cultivate_detail.mant_post_race_shop_check = False
+        log.info("Post-race shop check triggered - scanning and buying items")
+        from module.umamusume.scenario.mant.main_menu import handle_mant_shop_scan
+        try:
+            handle_mant_shop_scan(ctx, current_date, force_scan=True)
+        except Exception as e:
+            log.warning(f"Post-race shop scan failed: {e}")
 
     cached_races = getattr(ctx.cultivate_detail.turn_info, 'cached_available_races', None)
     if cached_races is None:
@@ -168,50 +168,41 @@ def script_cultivate_main_menu(ctx: UmamusumeContext):
 
     skip_training_on_race_day = getattr(ctx.task.detail, 'skip_training_on_race_day', False)
 
-    if has_extra_race and not is_mant(ctx):
-        if not skip_training_on_race_day:
-            if not ctx.cultivate_detail.turn_info.parse_train_info_finish:
-                log.info("extra race this turn, prioritizing")
-                if ctx.cultivate_detail.turn_info.turn_operation is None:
-                    ctx.cultivate_detail.turn_info.turn_operation = TurnOperation()
-                ctx.cultivate_detail.turn_info.turn_operation.turn_operation_type = TurnOperationType.TURN_OPERATION_TYPE_RACE
-                matching_races = [race_id for race_id in ctx.cultivate_detail.extra_race_list if race_id in ctx.cultivate_detail.turn_info.cached_available_races]
-                if matching_races:
-                    target_race_id = matching_races[0]
-                    ctx.cultivate_detail.turn_info.turn_operation.race_id = target_race_id
-                    log.info(f"Set race: {target_race_id}")
-                else:
-                    log.info("extra race not in available races")
-                ctx.cultivate_detail.turn_info.parse_train_info_finish = True
-                return
+    def _set_race_operation_from_extras():
+        if ctx.cultivate_detail.turn_info.turn_operation is None:
+            ctx.cultivate_detail.turn_info.turn_operation = TurnOperation()
+        ctx.cultivate_detail.turn_info.turn_operation.turn_operation_type = TurnOperationType.TURN_OPERATION_TYPE_RACE
+        matching_races = [race_id for race_id in ctx.cultivate_detail.extra_race_list
+                          if race_id in ctx.cultivate_detail.turn_info.cached_available_races]
+        if matching_races:
+            ctx.cultivate_detail.turn_info.turn_operation.race_id = matching_races[0]
+            log.info(f"Set race: {matching_races[0]}")
         else:
-            log.info("extra race available but skipping training check disabled - will check training first")
+            log.info("extra race not in available races")
+        ctx.cultivate_detail.turn_info.parse_train_info_finish = True
 
-    if has_extra_race and is_mant(ctx):
-        if not skip_training_on_race_day:
-            log.info("MANT: extra race available but scanning training first")
-        else:
-            log.info("MANT: extra race available, skip_training_on_race_day enabled - will check shops then race")
+    # When skip_training_on_race_day is ON, any scheduled race goes straight to race
+    # regardless of scenario. Force the race op even if parse_train_info_finish was
+    # already set by an earlier pass (prevents the training-check fallthrough below).
+    if has_extra_race and skip_training_on_race_day:
+        current_op = ctx.cultivate_detail.turn_info.turn_operation
+        if current_op is None or current_op.turn_operation_type != TurnOperationType.TURN_OPERATION_TYPE_RACE:
+            log.info("Skip training on race day enabled - going straight to race")
+            _set_race_operation_from_extras()
+            # MANT still needs a chance to scan shops; let handle_mant_main_menu run below.
+            if not is_mant(ctx):
+                return
+
+    # Non-MANT + skip disabled: still prioritize race directly (legacy behavior).
+    if has_extra_race and not is_mant(ctx) and not skip_training_on_race_day:
+        if not ctx.cultivate_detail.turn_info.parse_train_info_finish:
+            log.info("extra race this turn, prioritizing")
+            _set_race_operation_from_extras()
+            return
 
     if is_mant(ctx):
         from module.umamusume.scenario.mant.main_menu import handle_mant_main_menu
         if handle_mant_main_menu(ctx, img, current_date):
-            return
-
-    if has_extra_race and skip_training_on_race_day:
-        if not ctx.cultivate_detail.turn_info.parse_train_info_finish:
-            log.info("Skip training on race day enabled - going straight to race")
-            if ctx.cultivate_detail.turn_info.turn_operation is None:
-                ctx.cultivate_detail.turn_info.turn_operation = TurnOperation()
-            ctx.cultivate_detail.turn_info.turn_operation.turn_operation_type = TurnOperationType.TURN_OPERATION_TYPE_RACE
-            matching_races = [race_id for race_id in ctx.cultivate_detail.extra_race_list if race_id in ctx.cultivate_detail.turn_info.cached_available_races]
-            if matching_races:
-                target_race_id = matching_races[0]
-                ctx.cultivate_detail.turn_info.turn_operation.race_id = target_race_id
-                log.info(f"Set race: {target_race_id}")
-            else:
-                log.info("extra race not in available races")
-            ctx.cultivate_detail.turn_info.parse_train_info_finish = True
             return
 
     available_races = getattr(ctx.cultivate_detail.turn_info, 'cached_available_races', None)
@@ -294,7 +285,7 @@ def script_cultivate_main_menu(ctx: UmamusumeContext):
                 ctx.ctrl.click_by_point(CULTIVATE_REST)
             return
 
-    if is_mant(ctx):
+    if is_mant(ctx) and not (has_extra_race and skip_training_on_race_day):
         from module.umamusume.scenario.mant.main_menu import handle_mant_rival_race
         handle_mant_rival_race(ctx, img)
 

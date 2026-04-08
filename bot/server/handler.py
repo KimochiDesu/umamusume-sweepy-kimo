@@ -18,11 +18,14 @@ from bot.base.task import TaskExecuteMode
 
 class AddTaskRequest(BaseModel):
     app_name: str
-    task_execute_mode: TaskExecuteMode
+    task_execute_mode: int
     task_type: int
     task_desc: str
-    attachment_data: object
-    cron_job_config: Union[object, None] = None
+    attachment_data: Any = None
+    cron_job_config: Optional[Any] = None
+
+    class Config:
+        extra = "allow"
 
 
 class DeleteTaskRequest(BaseModel):
@@ -30,8 +33,8 @@ class DeleteTaskRequest(BaseModel):
 
 
 class UpdateTaskRequest(BaseModel):
-    task_id: str
-    attachment_data: object
+    task_id: Union[str, int]
+    attachment_data: Any
 
 
 class ResetTaskRequest(BaseModel):
@@ -123,9 +126,15 @@ def cancel_manual_skill_notification():
 
 
 @server.post("/task")
-def add_task(req: AddTaskRequest):
-    bot_ctrl.add_task(req.app_name, req.task_execute_mode, req.task_type, req.task_desc,
-                      req.cron_job_config, req.attachment_data)
+def add_task(req: Dict[str, Any] = Body(...)):
+    bot_ctrl.add_task(
+        req.get("app_name"),
+        int(req.get("task_execute_mode", 1)),
+        int(req.get("task_type", 0)),
+        req.get("task_desc", ""),
+        req.get("cron_job_config"),
+        req.get("attachment_data") or {},
+    )
 
 
 @server.delete("/task")
@@ -134,9 +143,37 @@ def delete_task(req: DeleteTaskRequest = Body(...)):
 
 
 @server.put("/task")
-def update_task(req: UpdateTaskRequest):
+def update_task(req: Dict[str, Any] = Body(...)):
     from fastapi import HTTPException
-    success = bot_ctrl.update_task(req.task_id, req.attachment_data)
+    from bot.engine.scheduler import scheduler
+
+    task_id = req.get("task_id")
+    attachment_data = req.get("attachment_data")
+
+    # Bundled frontend may PUT the full task payload (like POST) instead of
+    # {task_id, attachment_data}. In that case, find the running task by app_name
+    # + task_type and update its attachment_data in place.
+    if attachment_data is None and "app_name" in req:
+        attachment_data = {k: v for k, v in req.items()
+                           if k not in ("app_name", "task_execute_mode", "task_type",
+                                        "task_desc", "cron_job_config", "task_id")}
+        # If a dedicated attachment_data key wasn't present, the rest of the body IS it.
+        if not attachment_data:
+            attachment_data = req
+
+    if task_id is None:
+        app_name = req.get("app_name")
+        task_type = req.get("task_type")
+        for t in scheduler.get_task_list():
+            if getattr(t, "app_name", None) == app_name and \
+               getattr(getattr(t, "task_type", None), "value", None) == task_type:
+                task_id = t.task_id
+                break
+
+    if task_id is None:
+        raise HTTPException(status_code=404, detail="Task not found (no task_id)")
+
+    success = bot_ctrl.update_task(str(task_id), attachment_data or {})
     if success:
         return {"status": "updated"}
     else:
