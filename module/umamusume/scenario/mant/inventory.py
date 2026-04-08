@@ -1383,6 +1383,9 @@ def handle_megaphone_endgame(ctx):
     return False
 
 
+FORCED_EMPOWERING_MEGAPHONE_TURNS = {37, 39, 61, 63}
+
+
 def handle_megaphone(ctx):
     mant_cfg = getattr(ctx.task.detail.scenario_config, 'mant_config', None)
     if mant_cfg is None:
@@ -1391,6 +1394,28 @@ def handle_megaphone(ctx):
     date = getattr(ctx.cultivate_detail.turn_info, 'date', 0)
     if date >= MANT_CLIMAX_START and date not in MANT_CLIMAX_TRAINING_TURNS:
         return False
+
+    # Force a megaphone on summer days 1 & 3 of both summers.
+    # Prefer Empowering, then Motivating, then Coaching — whatever is owned.
+    if date in FORCED_EMPOWERING_MEGAPHONE_TURNS:
+        owned = getattr(ctx.cultivate_detail, 'mant_owned_items', [])
+        owned_map = {n: q for n, q in owned}
+        active_tier = getattr(ctx.cultivate_detail, 'mant_megaphone_tier', 0)
+        for forced_name in ('Empowering Megaphone', 'Motivating Megaphone', 'Coaching Megaphone'):
+            if owned_map.get(forced_name, 0) <= 0:
+                continue
+            tier, duration = MEGAPHONE_TIERS[forced_name]
+            if active_tier >= tier:
+                return False
+            ok = use_item_and_update_inventory(ctx, forced_name)
+            if ok:
+                ctx.cultivate_detail.mant_megaphone_tier = tier
+                ctx.cultivate_detail.mant_megaphone_turns = duration
+                log.info(f"forced {forced_name} on summer day {date}")
+                from module.umamusume.persistence import save_megaphone_state
+                save_megaphone_state(tier, duration)
+                return True
+            break
 
     if handle_megaphone_endgame(ctx):
         return True
@@ -1569,6 +1594,15 @@ def handle_glow_sticks_before_race(ctx):
     owned_map = {n: q for n, q in owned}
     if owned_map.get('Glow Sticks', 0) <= 0:
         return False
+
+    # Only burn Glow Sticks on high-fan (G1) races — these are the ~30k /
+    # 15k+ fan-reward races where the fan multiplier is actually worth it.
+    from module.umamusume.asset.race_data import is_g1_race
+    op = getattr(ctx.cultivate_detail.turn_info, 'turn_operation', None)
+    race_id = getattr(op, 'race_id', None) if op is not None else None
+    if not race_id or not is_g1_race(race_id):
+        return False
+
     return use_item_and_update_inventory(ctx, 'Glow Sticks')
 
 

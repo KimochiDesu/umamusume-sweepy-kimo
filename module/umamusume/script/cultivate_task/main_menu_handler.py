@@ -312,6 +312,17 @@ def script_cultivate_main_menu(ctx: UmamusumeContext):
                 from module.umamusume.scenario.mant.inventory import handle_energy_recovery
                 if handle_energy_recovery(ctx):
                     energy = getattr(ctx.cultivate_detail.turn_info, 'cached_energy', energy)
+
+        # Force training during summer camps for MANT: don't rest, go straight
+        # to training. Charm / energy item / whistle / anklet decisions are
+        # handled downstream in item_loop during training select.
+        if is_mant(ctx) and is_summer_camp_period(ctx.cultivate_detail.turn_info.date) and not has_extra_race:
+            log.info("MANT summer camp - forcing training over rest")
+            base_energy, _, _ = scan_energy(ctx.ctrl)
+            ctx.cultivate_detail.turn_info.base_energy = base_energy
+            ctx.ctrl.click_by_point(TO_TRAINING_SELECT)
+            return
+
         if energy <= limit:
             if getattr(ctx.cultivate_detail.turn_info, 'energy_recovery_deferred', False):
                 if not (has_extra_race and skip_training_on_race_day):
