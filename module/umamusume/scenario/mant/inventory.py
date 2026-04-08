@@ -1547,12 +1547,16 @@ def item_loop(ctx):
     got_whistle = has_whistle(ctx)
     got_energy = has_energy_recovery(ctx)
 
+    # Skip charm if it was already handled earlier this turn (the training
+    # select pre-pass runs charm first so we can suppress energy items).
+    charm_already_used = getattr(ctx.cultivate_detail.turn_info, '_charm_used_this_turn', False)
+
     whistle_used = False
     if got_charm and got_whistle:
         whistle_used = whistle_loop(ctx, start_date)
-        if not whistle_used:
+        if not whistle_used and not charm_already_used:
             handle_charm(ctx)
-    elif got_charm:
+    elif got_charm and not charm_already_used:
         handle_charm(ctx)
     elif got_whistle and got_energy:
         whistle_used = whistle_loop(ctx, start_date)

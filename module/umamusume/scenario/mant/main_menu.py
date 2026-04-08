@@ -177,17 +177,12 @@ def handle_mant_shop_scan(ctx, current_date, force_scan=False):
         if bbq_base_tier is not None:
             bbq_effective_tier = bbq_base_tier - bbq_shift
 
-        charm_owned = owned_map.get("Good-Luck Charm", 0)
         charm_base_tier = mant_cfg.item_tiers.get("good-luck_charm")
-        charm_shift = charm_owned
-        charm_effective_tier = 0
-        if charm_base_tier is not None:
-            charm_effective_tier = charm_base_tier - charm_shift
+        # No ownership-based shift — charms always evaluate at their base tier.
+        charm_effective_tier = charm_base_tier if charm_base_tier is not None else 0
 
         from module.umamusume.constants.game_constants import CLASSIC_YEAR_END
-        is_senior_or_later_for_charm = current_date > CLASSIC_YEAR_END
-        charm_stop_qty = 2 if is_senior_or_later_for_charm else 3
-        charm_stop = charm_owned >= charm_stop_qty
+        charm_stop = False
 
         bought_cures = set()
         priority_targets = []
@@ -237,15 +232,12 @@ def handle_mant_shop_scan(ctx, current_date, force_scan=False):
                     return True
             if display_name == AILMENT_CURE_ALL and has_miracle_cure:
                 return True
-            if display_name == "Energy Drink MAX" and owned_map.get("Energy Drink MAX", 0) > 0:
-                return True
             return False
 
         from module.umamusume.constants.game_constants import CLASSIC_YEAR_END, SENIOR_YEAR_END, SUMMER_CAMP_2_END
 
         cupcake_names = {'Plain Cupcake', 'Berry Sweet Cupcake'}
         skip_cupcakes = False
-        total_cupcakes = sum(owned_map.get(n, 0) for n in cupcake_names)
         is_senior_or_later = current_date > CLASSIC_YEAR_END
 
         from module.umamusume.scenario.mant.constants import get_incoming_mood
@@ -256,11 +248,9 @@ def handle_mant_shop_scan(ctx, current_date, force_scan=False):
             from bot.conn.fetch import read_mood
             current_mood = read_mood(ctx.current_screen)
 
-        if total_cupcakes >= 2:
-            skip_cupcakes = True
-        elif is_senior_or_later and (total_cupcakes >= 1 or current_mood is None or current_mood >= 5):
-            skip_cupcakes = True
-        elif current_mood is None or current_mood >= 5:
+        # Only skip cupcakes when mood is already maxed / will be maxed soon —
+        # no hard ownership cap.
+        if current_mood is None or current_mood >= 5:
             skip_cupcakes = True
         else:
             incoming = get_incoming_mood(current_date, 3)

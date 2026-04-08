@@ -73,29 +73,25 @@ class UmamusumeTaskType(Enum):
     UMAMUSUME_TASK_TYPE_CULTIVATE = 1
 
 
-def build_task(task_execute_mode: TaskExecuteMode, task_type: int,
-               task_desc: str, cron_job_config: dict, attachment_data: dict) -> UmamusumeTask:
+def load_attachment_data(attachment_data: dict) -> TaskDetail:
     td = TaskDetail()
-    ut = UmamusumeTask(task_execute_mode=task_execute_mode,
-                       task_type=UmamusumeTaskType(task_type), task_desc=task_desc, app_name="umamusume")
-    ut.cron_job_config = cron_job_config
-    td.scenario = ScenarioType(attachment_data['scenario'])
-    td.expect_attribute = attachment_data['expect_attribute']
-    td.follow_support_card_level = int(attachment_data['follow_support_card_level'])
-    td.follow_support_card_name = attachment_data['follow_support_card_name']
-    td.extra_race_list = attachment_data['extra_race_list']
-    td.learn_skill_list = attachment_data['learn_skill_list']
-    td.learn_skill_blacklist = attachment_data['learn_skill_blacklist']
-    td.tactic_list = attachment_data['tactic_list']
+    td.scenario = ScenarioType(attachment_data.get('scenario', 1))
+    td.expect_attribute = attachment_data.get('expect_attribute', [9999, 9999, 9999, 9999, 9999])
+    td.follow_support_card_level = int(attachment_data.get('follow_support_card_level', 50))
+    td.follow_support_card_name = attachment_data.get('follow_support_card_name', "")
+    td.extra_race_list = attachment_data.get('extra_race_list', [])
+    td.learn_skill_list = attachment_data.get('learn_skill_list', [])
+    td.learn_skill_blacklist = attachment_data.get('learn_skill_blacklist', [])
+    td.tactic_list = attachment_data.get('tactic_list', [4, 4, 4])
     td.tactic_actions = attachment_data.get('tactic_actions', [])
-    td.clock_use_limit = attachment_data['clock_use_limit']
-    td.learn_skill_threshold = attachment_data['learn_skill_threshold']
-    td.learn_skill_only_user_provided = attachment_data['learn_skill_only_user_provided']
-    td.allow_recover_tp = attachment_data['allow_recover_tp']
-    td.extra_weight = attachment_data['extra_weight']
+    td.clock_use_limit = attachment_data.get('clock_use_limit', 99)
+    td.learn_skill_threshold = attachment_data.get('learn_skill_threshold', 888)
+    td.learn_skill_only_user_provided = attachment_data.get('learn_skill_only_user_provided', False)
+    td.allow_recover_tp = attachment_data.get('allow_recover_tp', 0)
+    td.extra_weight = attachment_data.get('extra_weight', [[0, 0, 0, 0, 0], [0, 0, 0, 0, 0], [0, 0, 0, 0, 0], [0, 0, 0, 0, 0]])
     td.spirit_explosion = attachment_data.get('spirit_explosion', [0.16, 0.16, 0.16, 0.06, 0.11])
     td.compensate_failure = attachment_data.get('compensate_failure', True)
-    td.manual_purchase_at_end = attachment_data['manual_purchase_at_end']
+    td.manual_purchase_at_end = attachment_data.get('manual_purchase_at_end', False)
     td.override_insufficient_fans_forced_races = attachment_data.get('override_insufficient_fans_forced_races', False)
     td.use_last_parents = attachment_data.get('use_last_parents', False)
     td.cure_asap_conditions = attachment_data.get("cure_asap_conditions", "")
@@ -166,5 +162,13 @@ def build_task(task_execute_mode: TaskExecuteMode, task_type: int,
     td.hint_boost_multiplier = int(attachment_data.get('hint_boost_multiplier', 100))
     td.friendship_score_groups = attachment_data.get('friendship_score_groups', [])
     
-    ut.detail = td
+    return td
+
+
+def build_task(task_execute_mode: TaskExecuteMode, task_type: int,
+               task_desc: str, cron_job_config: dict, attachment_data: dict) -> UmamusumeTask:
+    ut = UmamusumeTask(task_execute_mode=TaskExecuteMode(task_execute_mode),
+                       task_type=UmamusumeTaskType(task_type), task_desc=task_desc, app_name="umamusume")
+    ut.cron_job_config = cron_job_config
+    ut.detail = load_attachment_data(attachment_data)
     return ut

@@ -961,9 +961,21 @@ def script_cultivate_training_select(ctx: UmamusumeContext):
     if op.turn_operation_type == TurnOperationType.TURN_OPERATION_TYPE_TRAINING:
         try:
             if ctx.cultivate_detail.scenario.scenario_type() == ScenarioType.SCENARIO_TYPE_MANT:
+                # Charm first: if it fires, training failure goes to 0 and we
+                # don't need to burn an energy item on top of it this turn.
+                charm_used = False
+                try:
+                    from module.umamusume.scenario.mant.inventory import handle_charm
+                    charm_used = bool(handle_charm(ctx))
+                    if charm_used:
+                        ctx.cultivate_detail.turn_info._charm_used_this_turn = True
+                except Exception:
+                    pass
+
                 if getattr(ctx.cultivate_detail.turn_info, 'energy_recovery_deferred', False):
-                    from module.umamusume.scenario.mant.inventory import handle_energy_recovery
-                    handle_energy_recovery(ctx)
+                    if not charm_used:
+                        from module.umamusume.scenario.mant.inventory import handle_energy_recovery
+                        handle_energy_recovery(ctx)
                     ctx.cultivate_detail.turn_info.energy_recovery_deferred = False
 
                 ctx.cultivate_detail.turn_info._pre_item_tier = getattr(ctx.cultivate_detail, 'mant_megaphone_tier', 0)

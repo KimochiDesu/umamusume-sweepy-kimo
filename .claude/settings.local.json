@@ -21,7 +21,8 @@
       "Bash(git commit:*)",
       "Bash(if exist nul del nul)",
       "Bash(git rm:*)",
-      "Bash(python:*)"
+      "Bash(python:*)",
+      "Bash(awk -F, '{print NF}')"
     ]
   }
 }

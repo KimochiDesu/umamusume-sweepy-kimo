@@ -302,29 +302,43 @@ def script_cultivate_main_menu(ctx: UmamusumeContext):
             if energy == 0:
                 time.sleep(0.15)
                 energy = read_energy()
+        in_summer = is_mant(ctx) and is_summer_camp_period(ctx.cultivate_detail.turn_info.date)
+
         if is_mant(ctx) and energy <= limit:
             ctx.cultivate_detail.turn_info.cached_energy = energy
             if has_extra_race:
                 from module.umamusume.scenario.mant.inventory import has_energy_recovery
                 if has_energy_recovery(ctx):
                     ctx.cultivate_detail.turn_info.energy_recovery_deferred = True
-            else:
+            elif in_summer:
+                # Only burn energy items outside an extra race if we're in
+                # summer camp — otherwise save them for summer and just rest.
                 from module.umamusume.scenario.mant.inventory import handle_energy_recovery
                 if handle_energy_recovery(ctx):
                     energy = getattr(ctx.cultivate_detail.turn_info, 'cached_energy', energy)
 
         # Force training during summer camps for MANT: don't rest, go straight
-        # to training. Charm / energy item / whistle / anklet decisions are
-        # handled downstream in item_loop during training select.
-        if is_mant(ctx) and is_summer_camp_period(ctx.cultivate_detail.turn_info.date) and not has_extra_race:
-            log.info("MANT summer camp - forcing training over rest")
+        # to training. Defer the energy-item top-up to training select so
+        # charm can be tried first — if charm is used (failure -> 0%) we
+        # don't need to burn an energy item this turn too.
+        if in_summer and not has_extra_race:
+            from module.umamusume.scenario.mant.inventory import has_energy_recovery
+            ctx.cultivate_detail.turn_info.cached_energy = energy
+            if energy <= limit and has_energy_recovery(ctx):
+                ctx.cultivate_detail.turn_info.energy_recovery_deferred = True
+            log.info(f"MANT summer camp - forcing training over rest (energy={energy})")
             base_energy, _, _ = scan_energy(ctx.ctrl)
             ctx.cultivate_detail.turn_info.base_energy = base_energy
             ctx.ctrl.click_by_point(TO_TRAINING_SELECT)
             return
 
         if energy <= limit:
-            if getattr(ctx.cultivate_detail.turn_info, 'energy_recovery_deferred', False):
+            # Non-summer, no scheduled race, low energy -> always rest.
+            # Don't let a stale energy_recovery_deferred flag push us into
+            # training with 0 energy.
+            if not has_extra_race and not in_summer:
+                ctx.cultivate_detail.turn_info.energy_recovery_deferred = False
+            elif getattr(ctx.cultivate_detail.turn_info, 'energy_recovery_deferred', False):
                 if not (has_extra_race and skip_training_on_race_day):
                     base_energy, _, _ = scan_energy(ctx.ctrl)
                     ctx.cultivate_detail.turn_info.base_energy = base_energy

@@ -105,7 +105,15 @@ class ImageMatchResult:
     matched_area = None
     center_point = None
     find_match: bool = False
-    score: int = 0
+    score: float = 0.0
+
+    @property
+    def match_accuracy(self):
+        return self.score
+
+    @match_accuracy.setter
+    def match_accuracy(self, value):
+        self.score = value
 
 
 def to_gray(img):
