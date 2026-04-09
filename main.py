@@ -385,7 +385,15 @@ if __name__ == '__main__':
                     task_config = checkpoint_data.get('task_config', {})
                     scenario_type = checkpoint_data.get('scenario_type', 1)
 
-                    attachment_data = {
+                    # Prefer the raw attachment captured at checkpoint time — it
+                    # preserves mant_config/item_tiers and every other user field.
+                    full_attachment = checkpoint_data.get('full_attachment_data')
+                    if isinstance(full_attachment, dict) and full_attachment:
+                        attachment_data = dict(full_attachment)
+                        if 'scenario' not in attachment_data:
+                            attachment_data['scenario'] = scenario_type
+                    else:
+                        attachment_data = {
                         'scenario': scenario_type,
                         'expect_attribute': task_config.get('expect_attribute'),
                         'follow_support_card_name': task_config.get('follow_support_card_name', ''),

@@ -41,6 +41,11 @@ def script_main_menu(ctx: UmamusumeContext):
     if ctx.cultivate_detail.cultivate_finish:
         import bot.conn.u2_ctrl as u2c
         u2c.IN_CAREER_RUN = False
+        try:
+            from module.umamusume import discord_notify
+            discord_notify.notify_career_finished(ctx, reason='COMPLETE')
+        except Exception:
+            pass
         mode_name = getattr(ctx.task.task_execute_mode, "name", None)
         if mode_name == "TASK_EXECUTE_MODE_FULL_AUTO":
             log.info("career run completed in full auto mode - resetting for next run")
@@ -60,6 +65,11 @@ def script_main_menu(ctx: UmamusumeContext):
             import bot.conn.u2_ctrl as u2c
             u2c.IN_CAREER_RUN = False
             ctx.cultivate_detail.cultivate_finish = True
+            try:
+                from module.umamusume import discord_notify
+                discord_notify.notify_career_finished(ctx, reason='COMPLETE')
+            except Exception:
+                pass
             mode_name = getattr(ctx.task.task_execute_mode, "name", None)
             if mode_name == "TASK_EXECUTE_MODE_FULL_AUTO":
                 log.info("full auto reset")

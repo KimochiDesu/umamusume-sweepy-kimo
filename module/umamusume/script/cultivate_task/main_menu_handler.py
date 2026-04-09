@@ -61,12 +61,23 @@ def script_cultivate_main_menu(ctx: UmamusumeContext):
 
     if ctx.cultivate_detail.turn_info is None or current_date != ctx.cultivate_detail.turn_info.date:
         if ctx.cultivate_detail.turn_info is not None:
+            # Flush a Discord summary for the turn that just ended (if webhook configured)
+            try:
+                from module.umamusume import discord_notify
+                discord_notify.notify_turn_summary(ctx)
+            except Exception:
+                pass
             ctx.cultivate_detail.turn_info_history.append(ctx.cultivate_detail.turn_info)
             if len(ctx.cultivate_detail.turn_info_history) > 100:
                 ctx.cultivate_detail.turn_info_history = ctx.cultivate_detail.turn_info_history[-100:]
         ctx.cultivate_detail.turn_info = TurnInfo()
         ctx.cultivate_detail.turn_info.date = current_date
         ctx.cultivate_detail.mant_shop_scanned_this_turn = False
+        try:
+            from module.umamusume import discord_notify
+            discord_notify.reset_turn_tracking(ctx)
+        except Exception:
+            pass
         if current_date > 0:
             ctx.cultivate_detail.team_sirius_available_dates = []
             ctx.cultivate_detail.pal_event_stage = 0

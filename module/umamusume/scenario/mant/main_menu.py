@@ -327,6 +327,11 @@ def handle_mant_shop_scan(ctx, current_date, force_scan=False):
             bought, held_items = buy_shop_items(ctx, targets, items_list, ratio, drag_ratio, first_item_gy)
             log.info(f"Shop purchase attempted, status: {bought}")
             if bought:
+                try:
+                    from module.umamusume import discord_notify
+                    discord_notify.mark_items_bought(ctx, targets)
+                except Exception:
+                    pass
                 ctx.cultivate_detail.mant_inventory_rescan_pending = True
                 total_spent = sum(SHOP_ITEM_COSTS.get(t, 0) for t in targets)
                 ctx.cultivate_detail.mant_coins = max(0, ctx.cultivate_detail.mant_coins - total_spent)
@@ -637,6 +642,11 @@ def _execute_cleat_buy(ctx, cleat_name, cost):
 
     bought, _ = buy_shop_items(ctx, [cleat_name], items_list, ratio, drag_ratio, first_item_gy)
     if bought:
+        try:
+            from module.umamusume import discord_notify
+            discord_notify.mark_items_bought(ctx, [cleat_name])
+        except Exception:
+            pass
         ctx.cultivate_detail.mant_inventory_rescan_pending = True
         ctx.cultivate_detail.mant_coins = max(0, ctx.cultivate_detail.mant_coins - cost)
         owned = dict(getattr(ctx.cultivate_detail, 'mant_owned_items', {}))

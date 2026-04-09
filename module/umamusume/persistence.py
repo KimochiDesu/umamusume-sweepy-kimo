@@ -172,6 +172,21 @@ def clear_ignore_grilled_carrots():
     save_persist(data)
 
 
+def get_discord_config():
+    data = load_persist()
+    return {
+        'webhook_url': data.get('discord_webhook_url', ''),
+        'user_id': data.get('discord_user_id', ''),
+    }
+
+
+def set_discord_config(webhook_url: str = '', user_id: str = ''):
+    data = load_persist()
+    data['discord_webhook_url'] = webhook_url or ''
+    data['discord_user_id'] = user_id or ''
+    save_persist(data)
+
+
 def save_megaphone_state(tier, turns):
     data = load_persist()
     data['megaphone_tier'] = tier
@@ -245,9 +260,35 @@ def save_checkpoint(ctx):
 
             task_detail = ctx.task.detail if hasattr(ctx, 'task') and hasattr(ctx.task, 'detail') else None
 
+            # Capture the full raw attachment_data from the running task so resume
+            # preserves every field (item_tiers, mant_config, and anything else).
+            full_attachment = None
+            try:
+                from bot.engine.scheduler import scheduler
+                from bot.base.purge import serialize_umamusume_task
+                for _t in scheduler.get_task_list() or []:
+                    if getattr(_t, 'app_name', None) != 'umamusume':
+                        continue
+                    if getattr(_t, 'detail', None) is task_detail:
+                        raw = getattr(_t, 'attachment_data', None)
+                        if isinstance(raw, dict) and raw:
+                            full_attachment = raw
+                        else:
+                            full_attachment = serialize_umamusume_task(_t)
+                        break
+                if full_attachment is None and task_detail is not None:
+                    # Fallback: serialize from the first umamusume task we find.
+                    for _t in scheduler.get_task_list() or []:
+                        if getattr(_t, 'app_name', None) == 'umamusume':
+                            full_attachment = serialize_umamusume_task(_t)
+                            break
+            except Exception as _e:
+                log.info(f"Checkpoint full_attachment capture failed: {_e}")
+
             checkpoint_data = {
                 'in_progress': True,
                 'scenario_type': scenario_type,
+                'full_attachment_data': full_attachment,
                 'task_config': {
                     'expect_attribute': detail.expect_attribute,
                     'follow_support_card_name': detail.follow_support_card_name,

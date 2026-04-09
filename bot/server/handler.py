@@ -215,6 +215,37 @@ def set_runtime_thresholds(req: RuntimeThresholds):
     except Exception as e:
         return {"status": "error", "message": str(e)}
 
+@server.get("/api/discord-config")
+def get_discord_config_endpoint():
+    try:
+        from module.umamusume.persistence import get_discord_config
+        return get_discord_config()
+    except Exception as e:
+        return {"webhook_url": "", "user_id": "", "error": str(e)}
+
+
+@server.post("/api/discord-config")
+def set_discord_config_endpoint(req: Dict[str, Any] = Body(...)):
+    try:
+        from module.umamusume.persistence import set_discord_config
+        webhook_url = (req.get("webhook_url") or "").strip()
+        user_id = (req.get("user_id") or "").strip()
+        set_discord_config(webhook_url=webhook_url, user_id=user_id)
+        return {"status": "ok"}
+    except Exception as e:
+        return {"status": "error", "message": str(e)}
+
+
+@server.post("/api/discord-test")
+def test_discord_webhook():
+    try:
+        from module.umamusume import discord_notify
+        discord_notify.send_message("Umamusume Sweepy: webhook connected ✅")
+        return {"status": "ok"}
+    except Exception as e:
+        return {"status": "error", "message": str(e)}
+
+
 @server.get("/api/update-status")
 def get_update_status():
     try:

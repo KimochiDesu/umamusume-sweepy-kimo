@@ -915,6 +915,11 @@ def use_item_and_update_inventory(ctx, item_name):
     from module.umamusume.context import log_detected_items
     log_detected_items(updated)
     log.info(f"used {item_name}")
+    try:
+        from module.umamusume import discord_notify
+        discord_notify.mark_item_used(ctx, item_name)
+    except Exception:
+        pass
     return True
 
 

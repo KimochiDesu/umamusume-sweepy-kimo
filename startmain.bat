@@ -1,5 +1,5 @@
 @echo off
-cd /d C:\Repositories\umamusume-sweepy
+cd /d "%~dp0"
 set UAT_AUTORESTART=1
 call conda activate umamusume
 
