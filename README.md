@@ -83,8 +83,8 @@ Also install Visual C++ Redistributable: https://aka.ms/vs/17/release/vc_redist.
 ### Step 3: Set Up Python Environment
 
 ```bash
-conda create -n env_uma python==3.10
-conda activate env_uma
+conda create -n umamusume python==3.10
+conda activate umamusume
 python -m pip install -r requirements.txt
 ```
 
