@@ -600,31 +600,13 @@ def handle_mant_cleat_shop_buy(ctx, current_date):
         return False
 
 
-    if is_senior:
-        if total_cleats >= 2:
-            return False
+    # No hard caps — always prefer Master, fall back to Artisan.
+    if is_senior or is_climax:
         for candidate in ('Master Cleat Hammer', 'Artisan Cleat Hammer'):
             if candidate not in shop_available:
                 continue
             cost = SHOP_ITEM_COSTS.get(candidate, 9999)
             if cost > budget:
-                continue
-            return _execute_cleat_buy(ctx, candidate, cost)
-        return False
-
-
-    if is_climax:
-        if total_cleats >= 3:
-            return False
-        if total_cleats < 2 and budget < 40:
-            return False
-        for candidate in ('Master Cleat Hammer', 'Artisan Cleat Hammer'):
-            if candidate not in shop_available:
-                continue
-            cost = SHOP_ITEM_COSTS.get(candidate, 9999)
-            if cost > budget:
-                continue
-            if total_cleats < 2 and budget - cost < 40:
                 continue
             return _execute_cleat_buy(ctx, candidate, cost)
         return False
