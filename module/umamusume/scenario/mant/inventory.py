@@ -803,6 +803,19 @@ ENERGY_SCORE_THRESHOLD = 20
 OVERFLOW_PENALTY = {0: 1.0, 1: 0.9, 2: 0.8, 3: 0.8, 4: 0.8}
 
 
+def use_kale_juice_with_cupcake(ctx):
+    """Use Royal Kale Juice, then chase with a Plain Cupcake (if owned) to
+    neutralize the -20 mood hit from the Kale. Returns whether Kale was used."""
+    ok = use_item_and_update_inventory(ctx, 'Royal Kale Juice')
+    if not ok:
+        return False
+    owned = getattr(ctx.cultivate_detail, 'mant_owned_items', [])
+    owned_map = {n: q for n, q in owned}
+    if owned_map.get('Plain Cupcake', 0) > 0:
+        use_item_and_update_inventory(ctx, 'Plain Cupcake')
+    return True
+
+
 def calc_effective_energy(item_name, raw_energy, current_energy, period_idx, max_energy=100):
     effective = raw_energy
     overflow = max(0, current_energy + raw_energy - max_energy)
@@ -825,8 +838,8 @@ def pick_best_energy_item(ctx):
     current_energy = int(current_energy)
     max_energy = getattr(ctx.cultivate_detail, 'mant_max_energy', 100)
     energy_use_max = max_energy * 0.5
-    energy_result_min = max_energy * 0.4
-    energy_score_threshold = max_energy * 0.2
+    energy_result_min = max_energy * 0.25
+    energy_score_threshold = max_energy * 0.1
     if current_energy >= energy_use_max:
         return None
 
@@ -954,6 +967,8 @@ def handle_energy_item(ctx):
     if item_name is None:
         return False
     ctx.cultivate_detail.turn_info.energy_item_used = True
+    if item_name == 'Royal Kale Juice':
+        return use_kale_juice_with_cupcake(ctx)
     return use_item_and_update_inventory(ctx, item_name)
 
 
@@ -981,13 +996,21 @@ def handle_energy_recovery(ctx):
     if not available:
         return False
 
+    # Bail out early if energy is already above the rest threshold — no
+    # item should fire in that case.
+    if current_energy > limit:
+        return False
+
     energy = current_energy
     used_any = False
     for item_name, raw_energy, qty in available:
         while qty > 0 and energy <= limit:
             if energy + raw_energy > max_energy:
                 break
-            ok = use_item_and_update_inventory(ctx, item_name)
+            if item_name == 'Royal Kale Juice':
+                ok = use_kale_juice_with_cupcake(ctx)
+            else:
+                ok = use_item_and_update_inventory(ctx, item_name)
             if not ok:
                 break
             energy += raw_energy
@@ -997,9 +1020,15 @@ def handle_energy_recovery(ctx):
         if energy > limit:
             break
 
-    if not used_any:
+    # Fallback: if the main loop skipped everything because every item
+    # would overflow, use the smallest one — but only when we're actually
+    # below the rest threshold.
+    if not used_any and energy <= limit:
         smallest = available[-1]
-        ok = use_item_and_update_inventory(ctx, smallest[0])
+        if smallest[0] == 'Royal Kale Juice':
+            ok = use_kale_juice_with_cupcake(ctx)
+        else:
+            ok = use_item_and_update_inventory(ctx, smallest[0])
         if ok:
             used_any = True
             ctx.cultivate_detail.turn_info.cached_energy = energy + smallest[1]

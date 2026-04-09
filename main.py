@@ -439,8 +439,41 @@ if __name__ == '__main__':
         pass
     
     print("UAT running on http://127.0.0.1:8071")
+
+    def _ensure_port_free(host, port, timeout=30):
+        import socket
+        deadline = time.time() + timeout
+        while time.time() < deadline:
+            s = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
+            try:
+                s.bind((host, port))
+                s.close()
+                return True
+            except OSError:
+                s.close()
+                # Try to kill whoever is holding the port (Windows).
+                try:
+                    import subprocess
+                    out = subprocess.check_output(
+                        ["netstat", "-ano", "-p", "TCP"], text=True, stderr=subprocess.DEVNULL
+                    )
+                    for line in out.splitlines():
+                        if f":{port} " in line and "LISTENING" in line:
+                            parts = line.split()
+                            pid = parts[-1]
+                            if pid.isdigit() and int(pid) != os.getpid():
+                                subprocess.run(["taskkill", "/F", "/PID", pid],
+                                               stdout=subprocess.DEVNULL,
+                                               stderr=subprocess.DEVNULL)
+                                print(f"Killed stale process {pid} holding port {port}")
+                except Exception:
+                    pass
+                time.sleep(1)
+        return False
+
     if os.environ.get("UAT_AUTORESTART", "0") == "1":
         for attempt in range(10):
+            _ensure_port_free("127.0.0.1", 8071)
             try:
                 run("bot.server.handler:server", host="127.0.0.1", port=8071, log_level="error")
                 break
