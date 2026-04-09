@@ -847,8 +847,11 @@ def pick_best_energy_item(ctx):
     from module.umamusume.constants.game_constants import get_date_period_index
     period_idx = get_date_period_index(date)
 
-    best_item = None
-    best_effective = 0
+    # Prefer the SMALLEST non-overflowing item that meets the minimum result
+    # threshold — this drains Vita 20 stock first and reserves Vita 40/65/Kale
+    # for lower-energy turns. Fall back to the highest-effective item if no
+    # non-overflow option exists.
+    candidates = []
     for item_name, raw_energy in ENERGY_ITEMS.items():
         if owned_map.get(item_name, 0) <= 0:
             continue
@@ -856,12 +859,20 @@ def pick_best_energy_item(ctx):
         if result_energy < energy_result_min:
             continue
         effective = calc_effective_energy(item_name, raw_energy, current_energy, period_idx, max_energy)
-        if effective > best_effective:
-            best_effective = effective
-            best_item = item_name
-    if best_effective < energy_score_threshold:
+        if effective < energy_score_threshold:
+            continue
+        overflow = max(0, result_energy - max_energy)
+        candidates.append((overflow, raw_energy, effective, item_name))
+    if not candidates:
         return None
-    return best_item
+    non_overflow = [c for c in candidates if c[0] == 0]
+    if non_overflow:
+        # smallest raw_energy first
+        non_overflow.sort(key=lambda c: c[1])
+        return non_overflow[0][3]
+    # all options overflow — pick highest effective
+    candidates.sort(key=lambda c: c[2], reverse=True)
+    return candidates[0][3]
 
 
 def plan_low_energy_recovery(current_energy, owned_map, max_energy=100):
@@ -1652,7 +1663,10 @@ def remaining_climax_races(date):
 
 
 def handle_cleat_before_race(ctx, race_id, is_climax_override=False):
-    from module.umamusume.constants.game_constants import SUMMER_CAMP_2_START
+    """Use a cleat before a race. Always reserves one Master Cleat Hammer
+    for each upcoming climax race (days 74/76/78) — spare masters and all
+    artisans are used first for non-climax races."""
+    from module.umamusume.asset.race_data import is_g1_race
 
     if getattr(ctx.cultivate_detail, 'mant_cleat_used', False):
         return False
@@ -1664,92 +1678,38 @@ def handle_cleat_before_race(ctx, race_id, is_climax_override=False):
 
     master_qty = owned_map.get('Master Cleat Hammer', 0)
     artisan_qty = owned_map.get('Artisan Cleat Hammer', 0)
-
     if master_qty + artisan_qty <= 0:
         return False
 
+    def _use(name):
+        result = use_item_and_update_inventory(ctx, name)
+        if result:
+            ctx.cultivate_detail.mant_cleat_used = True
+        return result
+
+    # Climax races: spend the best cleat we have.
     if is_climax_race:
         if master_qty > 0:
-            result = use_item_and_update_inventory(ctx, 'Master Cleat Hammer')
-            if result:
-                ctx.cultivate_detail.mant_cleat_used = True
-            return result
+            return _use('Master Cleat Hammer')
         if artisan_qty > 0:
-            result = use_item_and_update_inventory(ctx, 'Artisan Cleat Hammer')
-            if result:
-                ctx.cultivate_detail.mant_cleat_used = True
-            return result
+            return _use('Artisan Cleat Hammer')
         return False
 
-    from module.umamusume.constants.game_constants import CLASSIC_YEAR_END, SENIOR_YEAR_END
-    from module.umamusume.asset.race_data import is_g1_race
+    # Non-climax races: reserve one master per upcoming climax race.
+    # `remaining_climax_races(date)` already counts climax days >= today,
+    # and today is not climax here, so all of them are upcoming.
+    remaining_climax = remaining_climax_races(date)
+    spare_master = max(0, master_qty - remaining_climax)
 
-    if date > SUMMER_CAMP_2_START:
-        # Calculate how many climax races are left to reserve master cleats for
-        remaining_climax = remaining_climax_races(date)
-        reserve_master = min(remaining_climax, master_qty)
-
-        # Only use cleats if we have more than the reserved amount
-        spare_master = master_qty - reserve_master
-        spare_artisan = artisan_qty  # All artisan cleats are spare
-
-        total = master_qty + artisan_qty
-        if total <= remaining_climax:
-            return False
-
-        is_senior = date <= SENIOR_YEAR_END
-
-        # Prioritize artisan cleats if in senior year and we haven't reserved enough master cleats yet
-        if is_senior and master_qty < remaining_climax and spare_artisan > 0:
-            result = use_item_and_update_inventory(ctx, 'Artisan Cleat Hammer')
-            if result:
-                ctx.cultivate_detail.mant_cleat_used = True
-            return result
-
-        # Use spare master cleats if available
-        if spare_master > 0:
-            result = use_item_and_update_inventory(ctx, 'Master Cleat Hammer')
-            if result:
-                ctx.cultivate_detail.mant_cleat_used = True
-            return result
-
-        # Use artisan cleats if available
-        if spare_artisan > 0:
-            result = use_item_and_update_inventory(ctx, 'Artisan Cleat Hammer')
-            if result:
-                ctx.cultivate_detail.mant_cleat_used = True
-            return result
-
-        return False
-
+    # Only burn cleats on G1s when it's not a climax turn.
     if not is_g1_race(race_id):
         return False
 
-    is_senior = CLASSIC_YEAR_END < date <= SENIOR_YEAR_END
-
-    if is_senior and master_qty < 3:
-        if artisan_qty > 0:
-            result = use_item_and_update_inventory(ctx, 'Artisan Cleat Hammer')
-            if result:
-                ctx.cultivate_detail.mant_cleat_used = True
-            return result
-        if master_qty > 0:
-            result = use_item_and_update_inventory(ctx, 'Master Cleat Hammer')
-            if result:
-                ctx.cultivate_detail.mant_cleat_used = True
-            return result
-        return False
-
-    if master_qty > 0:
-        result = use_item_and_update_inventory(ctx, 'Master Cleat Hammer')
-        if result:
-            ctx.cultivate_detail.mant_cleat_used = True
-        return result
+    # Prefer artisans first so masters are saved for climax.
     if artisan_qty > 0:
-        result = use_item_and_update_inventory(ctx, 'Artisan Cleat Hammer')
-        if result:
-            ctx.cultivate_detail.mant_cleat_used = True
-        return result
+        return _use('Artisan Cleat Hammer')
+    if spare_master > 0:
+        return _use('Master Cleat Hammer')
     return False
 
 

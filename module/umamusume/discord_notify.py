@@ -108,11 +108,20 @@ def _half_name(date: int) -> str:
     return 'EARLY' if (date % 2 == 1) else 'LATE'
 
 
+_MONTH_NAMES = ['Jul','Aug','Sep','Oct','Nov','Dec','Jan','Feb','Mar','Apr','May','Jun']
+
 def _month_index(date: int) -> int:
     if date is None or date <= 0:
         return 0
     # 2 turns per month, starting at month 1 of the current phase year
     return ((date - 1) % 24) // 2 + 1
+
+def _month_name(date: int) -> str:
+    if date is None or date <= 0:
+        return ''
+    # Career starts Junior Year Early July; 2 turns per month, 12 months per year
+    offset = ((date - 1) // 2) % 12
+    return _MONTH_NAMES[offset]
 
 
 def _scenario_name(ctx) -> str:
@@ -283,12 +292,12 @@ def notify_turn_summary(ctx):
         date = getattr(detail.turn_info, 'date', -1)
         phase = _phase_name(date)
         half = _half_name(date)
-        month = _month_index(date)
+        month = _month_name(date)
         scenario = _scenario_name(ctx)
         mood = _mood_name(ctx)
         energy = _energy_str(ctx)
 
-        header = f"**Turn {date} | {phase} | {half} Month {month} | Energy {energy} | Mood {mood} | {scenario}**"
+        header = f"**Turn {date} | {phase} | {half} {month} | Energy {energy} | Mood {mood} | {scenario}**"
         lines = ["**---------------------------------------------**", header]
         stats = _stats_line(ctx)
         if stats:
