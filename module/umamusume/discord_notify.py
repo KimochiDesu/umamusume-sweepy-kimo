@@ -282,6 +282,102 @@ def _race_line(ctx) -> str:
         return "**RACE:** ?"
 
 
+_PENDING_SUMMARY_FILE = 'pending_career_summary.json'
+
+# Scenarios end on different final turns; if we restart and see the last
+# persisted turn was at/past this, treat it as a finished career.
+_FINAL_TURN_BY_SCENARIO = {'MANT': 78, 'URA': 72, 'AOHARU': 72}
+
+
+def _persist_pending_summary(ctx):
+    """Write a snapshot to disk after every turn so that if main.py is killed
+    before the normal career-finish hook fires, the next startup can still
+    send the career summary."""
+    try:
+        detail = ctx.cultivate_detail
+        date = getattr(detail.turn_info, 'date', -1)
+        if date is None or date <= 0:
+            return
+        scenario = _scenario_name(ctx)
+        attr = getattr(detail.turn_info, 'uma_attribute', None)
+        stats = None
+        if attr is not None:
+            try:
+                stats = {
+                    'spd': attr.speed, 'stam': attr.stamina, 'pwr': attr.power,
+                    'will': attr.will, 'int': attr.intelligence,
+                }
+            except Exception:
+                stats = None
+        fans = getattr(detail, 'final_fans', None) or getattr(detail, 'fan_count', None)
+        # Best-effort: snag sparks/skills if they're already populated. On the
+        # per-turn path factor_list is usually empty (only filled on the final
+        # result screen), so recovered summaries may lack sparks.
+        sparks_str = _sparks_line(ctx) or ''
+        skills_str = _skills_line() or ''
+        snapshot = {
+            'scenario': scenario,
+            'date': int(date),
+            'stats': stats,
+            'fans': fans,
+            'sparks': sparks_str,
+            'skills': skills_str,
+        }
+        with open(_PENDING_SUMMARY_FILE, 'w', encoding='utf-8') as f:
+            json.dump(snapshot, f)
+    except Exception as e:
+        log.debug(f"_persist_pending_summary failed: {e}")
+
+
+def _clear_pending_summary():
+    try:
+        import os
+        if os.path.exists(_PENDING_SUMMARY_FILE):
+            os.remove(_PENDING_SUMMARY_FILE)
+    except Exception:
+        pass
+
+
+def flush_pending_summary_on_startup():
+    """Called from main.py on boot. If the previous run reached the last turn
+    of its scenario but the normal career-finish hook never fired (process
+    killed on restart/update), send the summary now from the persisted
+    snapshot. No-op if no pending snapshot or no webhook configured."""
+    try:
+        import os
+        if not os.path.exists(_PENDING_SUMMARY_FILE):
+            return
+        cfg = _get_config()
+        if not cfg.get('webhook_url'):
+            _clear_pending_summary()
+            return
+        with open(_PENDING_SUMMARY_FILE, 'r', encoding='utf-8') as f:
+            snap = json.load(f) or {}
+        _clear_pending_summary()
+        scenario = str(snap.get('scenario') or 'UNKNOWN').upper()
+        date = int(snap.get('date') or 0)
+        final_turn = _FINAL_TURN_BY_SCENARIO.get(scenario, 72)
+        if date < final_turn:
+            return  # not actually finished — skip
+        lines = [f"**Career Finished — {scenario} (RECOVERED)**"]
+        stats = snap.get('stats') or {}
+        if stats:
+            lines.append(
+                f"SPD {stats.get('spd', 0)} | STA {stats.get('stam', 0)} | "
+                f"PWR {stats.get('pwr', 0)} | WIL {stats.get('will', 0)} | "
+                f"INT {stats.get('int', 0)}"
+            )
+        if snap.get('fans') is not None:
+            lines.append(f"Fans: {snap['fans']}")
+        if snap.get('sparks'):
+            lines.append(snap['sparks'])
+        if snap.get('skills'):
+            lines.append(snap['skills'])
+        send_message("\n".join(lines), mention_user=True)
+    except Exception as e:
+        log.debug(f"flush_pending_summary_on_startup failed: {e}")
+
+
 def notify_turn_summary(ctx):
     """Send the per-turn summary line. Safe to call anywhere — bails if no webhook."""
     try:
@@ -308,6 +404,7 @@ def notify_turn_summary(ctx):
         lines.append(_used_items_line(ctx))
         lines.append(_race_line(ctx))
         send_message("\n".join(lines))
+        _persist_pending_summary(ctx)
     except Exception as e:
         log.debug(f"notify_turn_summary failed: {e}")
 
@@ -397,6 +494,7 @@ def notify_career_finished(ctx, reason: str = 'COMPLETE'):
         if skills:
             lines.append(skills)
         send_message("\n".join(lines), mention_user=True)
+        _clear_pending_summary()
     except Exception as e:
         log.debug(f"notify_career_finished failed: {e}")
 

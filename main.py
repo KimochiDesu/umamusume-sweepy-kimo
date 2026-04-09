@@ -337,6 +337,12 @@ if __name__ == '__main__':
         sys.exit(1)
     
     normalize_start_end()
+
+    try:
+        from module.umamusume import discord_notify
+        discord_notify.flush_pending_summary_on_startup()
+    except Exception:
+        pass
     
     enforcer_thread = threading.Thread(target=time_window_enforcer, 
                                        args=(selected_device,), daemon=True)

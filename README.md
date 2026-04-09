@@ -69,18 +69,26 @@ git clone https://github.com/SweepTosher/umamusume-sweepy
 cd umamusume-sweepy
 ```
 
-### Step 2: Install Python 3.10 And VC++
+### Step 2: Install Anaconda (required for Python environment)
+
+1. Download Anaconda: https://www.anaconda.com/download
+2. Choose the 64-bit Windows Installer
+3. During installation:
+   - Check **"Add Anaconda to my PATH environment variable"**
+   - Select **"Register Anaconda as my default Python"**
+4. Complete the installation.
+
+Also install Visual C++ Redistributable: https://aka.ms/vs/17/release/vc_redist.x64.exe
+
+### Step 3: Set Up Python Environment
 
 ```bash
-winget install -e --id Python.Python.3.10
-Visual C++ Redistributable: https://aka.ms/vs/17/release/vc_redist.x64.exe
+conda create -n env_uma python==3.10
+conda activate env_uma
+python -m pip install -r requirements.txt
 ```
 
-### Step 3: Install Dependencies
-
-```bash
-pip install -r requirements.txt
-```
+Type `y` and press Enter if prompted to proceed. This may take several minutes to complete.
 
 ### Step 4: Run the Bot
 
