@@ -290,7 +290,22 @@ def parse_date(img, ctx: UmamusumeContext) -> int:
         log.info(f"URA Extracted date text: '{date_text}'")
         
         if "Climax" in date_text or "TS Climax" in date_text:
-            return 73
+            # MANT TS Climax has 6 turns (73-78). The OCR just says "TS Climax"
+            # for all of them, so we infer the turn number from how many climax
+            # turns have already been recorded in turn_info_history.
+            climax_turns_seen = 0
+            for ti in ctx.cultivate_detail.turn_info_history:
+                if getattr(ti, 'date', 0) >= 73:
+                    climax_turns_seen += 1
+            # If current turn_info already has date >= 73, don't double-count
+            current_ti = ctx.cultivate_detail.turn_info
+            if current_ti is not None and getattr(current_ti, 'date', 0) >= 73:
+                return current_ti.date  # same turn, return existing date
+            climax_date = 73 + climax_turns_seen
+            if climax_date > 78:
+                climax_date = 78
+            log.info(f"MANT Climax turn detected: date={climax_date} (history has {climax_turns_seen} climax turns)")
+            return climax_date
 
         # Special handling for "Finale Season" in URA championship
         if "Finale Season" in date_text or "Finale" in date_text:

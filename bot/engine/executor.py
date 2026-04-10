@@ -401,7 +401,13 @@ class Executor:
             try:
                 from bot.engine.scheduler import scheduler
                 if task.task_status == TaskStatus.TASK_STATUS_SUCCESS:
-                    # Re-create the task so the scheduler picks it up again
+                    # Serialize the live task detail (includes mant_config,
+                    # item_tiers, and all UI customizations) rather than
+                    # the stale original attachment_data.
+                    from bot.base.purge import serialize_umamusume_task
+                    live_attachment = serialize_umamusume_task(task)
+                    if not isinstance(live_attachment, dict) or not live_attachment:
+                        live_attachment = getattr(task, 'attachment_data', None) or {}
                     import bot.engine.ctrl as ctrl
                     ctrl.add_task(
                         task.app_name,
@@ -409,9 +415,9 @@ class Executor:
                         getattr(task.task_type, 'value', 0),
                         task.task_desc or 'Auto-resumed',
                         getattr(task, 'cron_job_config', None),
-                        getattr(task, 'attachment_data', None) or {},
+                        live_attachment,
                     )
-                    log.info("Re-queued task for next career run")
+                    log.info("Re-queued task with live config")
             except Exception as e:
                 log.error(f"Failed to re-queue task, falling back to restart: {e}")
                 try:

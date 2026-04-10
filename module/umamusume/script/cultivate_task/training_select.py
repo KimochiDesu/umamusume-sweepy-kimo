@@ -152,6 +152,35 @@ def script_cultivate_training_select(ctx: UmamusumeContext):
                 ctx.ctrl.click_by_point(RETURN_TO_CULTIVATE_MAIN_MENU)
                 return
 
+        # Before resting, check if we have excess energy items (>3) — use
+        # one instead of wasting a turn on rest.
+        try:
+            if ctx.cultivate_detail.scenario.scenario_type() == ScenarioType.SCENARIO_TYPE_MANT:
+                from module.umamusume.scenario.mant.inventory import (
+                    ENERGY_ITEMS, handle_energy_item,
+                )
+                from module.umamusume.constants.game_constants import (
+                    is_summer_camp_period, SUMMER_CAMP_1_START, SUMMER_CAMP_2_START,
+                )
+                date = getattr(ctx.cultivate_detail.turn_info, 'date', 0)
+                owned = getattr(ctx.cultivate_detail, 'mant_owned_items', [])
+                owned_map = {n: q for n, q in owned}
+                total_energy_items = sum(owned_map.get(name, 0) for name in ENERGY_ITEMS)
+                # Reserve 3 items for each upcoming summer, spend extras now
+                reserve = 0
+                if date < SUMMER_CAMP_1_START:
+                    reserve = 6  # 3 for each summer
+                elif date <= SUMMER_CAMP_2_START and not is_summer_camp_period(date):
+                    reserve = 3  # 3 for 2nd summer
+                if total_energy_items > reserve:
+                    used = handle_energy_item(ctx)
+                    if used:
+                        log.info(f"used energy item instead of resting ({total_energy_items} items, reserve={reserve})")
+                        ctx.ctrl.click_by_point(RETURN_TO_CULTIVATE_MAIN_MENU)
+                        return
+        except Exception:
+            pass
+
         log.info(f"rest threshold: energy={energy}, threshold={limit} - prioritizing rest")
         op = TurnOperation()
         op.turn_operation_type = TurnOperationType.TURN_OPERATION_TYPE_REST
