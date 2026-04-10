@@ -1003,8 +1003,9 @@ def handle_energy_recovery(ctx):
     owned = getattr(ctx.cultivate_detail, 'mant_owned_items', [])
     owned_map = {n: q for n, q in owned}
 
+    # Sort smallest first so Vita 20s drain before bigger items are spent.
     available = []
-    for item_name, raw_energy in sorted(ENERGY_ITEMS.items(), key=lambda x: x[1], reverse=True):
+    for item_name, raw_energy in sorted(ENERGY_ITEMS.items(), key=lambda x: x[1]):
         qty = owned_map.get(item_name, 0)
         if qty > 0:
             available.append((item_name, raw_energy, qty))
@@ -1141,6 +1142,19 @@ def handle_charm(ctx):
     if owned_map.get('Good-Luck Charm', 0) <= 0:
         return False
 
+    charm_failure_rate = getattr(mant_cfg, 'charm_failure_rate', 21)
+
+    # Check the training the bot will actually pick (highest computed score).
+    computed = getattr(ctx.cultivate_detail.turn_info, 'cached_computed_scores', None)
+    til_list = getattr(ctx.cultivate_detail.turn_info, 'training_info_list', None)
+    if computed and til_list and len(computed) == 5 and len(til_list) >= 5:
+        chosen_idx = max(range(5), key=lambda i: computed[i])
+        chosen_fr = int(getattr(til_list[chosen_idx], 'failure_rate', 0))
+        if chosen_fr >= charm_failure_rate:
+            log.info(f"charm: chosen training idx={chosen_idx} has {chosen_fr}% failure — using charm")
+            return use_item_and_update_inventory(ctx, 'Good-Luck Charm')
+
+    # Fallback: original percentile-based check for the best pre-fail training.
     score_history = getattr(ctx.cultivate_detail, 'score_history', [])
     if len(score_history) < 16:
         return False
@@ -1158,12 +1172,16 @@ def handle_charm(ctx):
 
     charm_threshold = getattr(mant_cfg, 'charm_threshold', 40)
 
+    date = getattr(ctx.cultivate_detail.turn_info, 'date', 0)
+    from module.umamusume.constants.game_constants import is_summer_camp_period
+    if is_summer_camp_period(date):
+        charm_threshold = max(0, charm_threshold - 25)
+
     if percentile <= charm_threshold:
         return False
 
     til = ctx.cultivate_detail.turn_info.training_info_list[best_idx]
     fr = int(getattr(til, 'failure_rate', 0))
-    charm_failure_rate = getattr(mant_cfg, 'charm_failure_rate', 21)
     if fr < charm_failure_rate:
         return False
 
@@ -1465,6 +1483,20 @@ def handle_megaphone(ctx):
     if handle_megaphone_endgame(ctx):
         return True
 
+    # Reserve megaphones for summer training — don't spend them within
+    # a few turns of summer camp starting (turns 37-40, 61-64).
+    from module.umamusume.constants.game_constants import (
+        is_summer_camp_period,
+        SUMMER_CAMP_1_START, SUMMER_CAMP_2_START,
+    )
+    is_summer = is_summer_camp_period(date)
+    if not is_summer and date <= SUMMER_CAMP_2_START:
+        turns_to_summer1 = SUMMER_CAMP_1_START - date  # summer1 starts after 36
+        turns_to_summer2 = SUMMER_CAMP_2_START - date  # summer2 starts after 60
+        if 0 < turns_to_summer1 <= 6 or 0 < turns_to_summer2 <= 6:
+            log.info(f"reserving megaphones for upcoming summer (date={date})")
+            return False
+
     percentile = get_stat_only_percentile(ctx)
     if percentile is None:
         return False
@@ -1474,9 +1506,6 @@ def handle_megaphone(ctx):
 
     active_tier = getattr(ctx.cultivate_detail, 'mant_megaphone_tier', 0)
     active_turns = getattr(ctx.cultivate_detail, 'mant_megaphone_turns', 0)
-
-    from module.umamusume.constants.game_constants import is_summer_camp_period
-    is_summer = is_summer_camp_period(date)
     summer_bonus = getattr(mant_cfg, 'mega_summer_bonus', 10)
     race_penalty = getattr(mant_cfg, 'mega_race_penalty', 5)
 

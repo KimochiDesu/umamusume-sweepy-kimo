@@ -56,11 +56,21 @@ def script_cultivate_goal_race(ctx: UmamusumeContext):
     
     if ctx.cultivate_detail.turn_info is None or current_date != ctx.cultivate_detail.turn_info.date:
         if ctx.cultivate_detail.turn_info is not None:
+            try:
+                from module.umamusume import discord_notify
+                discord_notify.notify_turn_summary(ctx)
+            except Exception:
+                pass
             ctx.cultivate_detail.turn_info_history.append(ctx.cultivate_detail.turn_info)
             if len(ctx.cultivate_detail.turn_info_history) > 100:
                 ctx.cultivate_detail.turn_info_history = ctx.cultivate_detail.turn_info_history[-100:]
         ctx.cultivate_detail.turn_info = TurnInfo()
         ctx.cultivate_detail.turn_info.date = current_date
+        try:
+            from module.umamusume import discord_notify
+            discord_notify.reset_turn_tracking(ctx)
+        except Exception:
+            pass
     
     if ctx.cultivate_detail.turn_info.turn_operation:
         race_id = ctx.cultivate_detail.turn_info.turn_operation.race_id

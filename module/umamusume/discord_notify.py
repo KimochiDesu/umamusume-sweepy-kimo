@@ -43,7 +43,7 @@ def _post(webhook_url: str, payload: dict):
         log.debug(f"Discord webhook send failed: {e}")
 
 
-def _send_async(payload: dict):
+def _send_async(payload: dict, blocking: bool = False):
     cfg = _get_config()
     url = cfg.get('webhook_url') or ''
     if not url:
@@ -54,12 +54,19 @@ def _send_async(payload: dict):
         if gap < _MIN_INTERVAL:
             time.sleep(_MIN_INTERVAL - gap)
         _last_send_ts = time.time()
-    t = threading.Thread(target=_post, args=(url, payload), daemon=True)
-    t.start()
+    if blocking:
+        _post(url, payload)
+    else:
+        t = threading.Thread(target=_post, args=(url, payload), daemon=True)
+        t.start()
 
 
-def send_message(content: str, mention_user: bool = False):
-    """Fire-and-forget send of a plain text message to the configured webhook."""
+def send_message(content: str, mention_user: bool = False, blocking: bool = False):
+    """Send a message to the configured webhook.
+
+    Set *blocking=True* to wait for delivery (used for career-finish so
+    the message survives an immediate os._exit restart).
+    """
     if not content:
         return
     cfg = _get_config()
@@ -71,7 +78,7 @@ def send_message(content: str, mention_user: bool = False):
     # Discord limit is 2000 chars
     if len(content) > 1900:
         content = content[:1900] + "\n…(truncated)"
-    _send_async({'content': content, 'allowed_mentions': {'parse': ['users']}})
+    _send_async({'content': content, 'allowed_mentions': {'parse': ['users']}}, blocking=blocking)
 
 
 # ------------------------------ formatting helpers ------------------------------
@@ -464,6 +471,11 @@ def notify_career_finished(ctx, reason: str = 'COMPLETE'):
         cfg = _get_config()
         if not cfg.get('webhook_url'):
             return
+        # Flush the last turn's summary (it never gets a "next turn" trigger)
+        try:
+            notify_turn_summary(ctx)
+        except Exception:
+            pass
         detail = ctx.cultivate_detail
         scenario = _scenario_name(ctx)
 
@@ -493,7 +505,7 @@ def notify_career_finished(ctx, reason: str = 'COMPLETE'):
         skills = _skills_line()
         if skills:
             lines.append(skills)
-        send_message("\n".join(lines), mention_user=True)
+        send_message("\n".join(lines), mention_user=True, blocking=True)
         _clear_pending_summary()
     except Exception as e:
         log.debug(f"notify_career_finished failed: {e}")

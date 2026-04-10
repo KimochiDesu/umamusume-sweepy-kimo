@@ -392,7 +392,34 @@ class Executor:
             save_scheduler_state()
         except Exception:
             pass
-        try:
-            soft_process_restart()
-        except Exception:
-            pass
+        # In full-auto mode the task loop never ends here (script_main_menu
+        # resets and continues), so if we reach this point it's a one-time
+        # task or an error.  When UAT_AUTORESTART is set, re-queue a fresh
+        # task instead of nuking the process — keeps the web server alive
+        # and avoids the port-rebind race.
+        if os.environ.get("UAT_AUTORESTART", "0") == "1":
+            try:
+                from bot.engine.scheduler import scheduler
+                if task.task_status == TaskStatus.TASK_STATUS_SUCCESS:
+                    # Re-create the task so the scheduler picks it up again
+                    import bot.engine.ctrl as ctrl
+                    ctrl.add_task(
+                        task.app_name,
+                        task.task_execute_mode,
+                        getattr(task.task_type, 'value', 0),
+                        task.task_desc or 'Auto-resumed',
+                        getattr(task, 'cron_job_config', None),
+                        getattr(task, 'attachment_data', None) or {},
+                    )
+                    log.info("Re-queued task for next career run")
+            except Exception as e:
+                log.error(f"Failed to re-queue task, falling back to restart: {e}")
+                try:
+                    soft_process_restart()
+                except Exception:
+                    pass
+        else:
+            try:
+                soft_process_restart()
+            except Exception:
+                pass

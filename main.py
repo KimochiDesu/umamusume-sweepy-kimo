@@ -487,12 +487,17 @@ if __name__ == '__main__':
         return False
 
     if os.environ.get("UAT_AUTORESTART", "0") == "1":
-        _ensure_port_free("127.0.0.1", 8071)
-        try:
-            run("bot.server.handler:server", host="127.0.0.1", port=8071, log_level="error")
-        except OSError as e:
-            print(f"Port 8071 bind failed: {e}")
-            raise
+        for _attempt in range(10):
+            _ensure_port_free("127.0.0.1", 8071)
+            try:
+                run("bot.server.handler:server", host="127.0.0.1", port=8071, log_level="error")
+                break
+            except OSError as e:
+                if "10048" in str(e) and _attempt < 9:
+                    print(f"Port 8071 not ready, retrying in 3s... ({_attempt+1}/10)")
+                    time.sleep(3)
+                else:
+                    raise
     else:
         threading.Thread(target=lambda: (time.sleep(1), __import__('webbrowser').open("http://127.0.0.1:8071")), daemon=True).start()
         try:
