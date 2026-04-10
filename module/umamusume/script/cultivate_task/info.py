@@ -105,6 +105,8 @@ TITLE = [
     "Career Complete", #52
     "Training Items", #53
     "Active Item Effects", #54
+    "Veteran Umamusume Max", #55 - post-career rank notification
+    "Veteran Umamusume", #56 - post-career rank notification variant
 ]
 
 
@@ -717,4 +719,7 @@ def script_info(ctx: UmamusumeContext):
             ctx.ctrl.click(95, 1228)
         if title_text == TITLE[52]:
             ctx.ctrl.click(200, 805, "Career Complete to home")
+        if title_text in (TITLE[55], TITLE[56]):
+            log.info("Dismissing Veteran Umamusume popup")
+            ctx.ctrl.click(200, 1210, "Veteran Umamusume dismiss")
         time.sleep(0.5)
