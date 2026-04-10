@@ -454,8 +454,9 @@ if __name__ == '__main__':
     
     print("UAT running on http://127.0.0.1:8071")
 
-    def _ensure_port_free(host, port, timeout=30):
-        import socket
+    def _ensure_port_free(host, port, timeout=15):
+        import socket, subprocess
+        killed_pids = set()
         deadline = time.time() + timeout
         while time.time() < deadline:
             s = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
@@ -465,37 +466,33 @@ if __name__ == '__main__':
                 return True
             except OSError:
                 s.close()
-                # Try to kill whoever is holding the port (Windows).
-                try:
-                    import subprocess
-                    out = subprocess.check_output(
-                        ["netstat", "-ano", "-p", "TCP"], text=True, stderr=subprocess.DEVNULL
-                    )
-                    for line in out.splitlines():
-                        if f":{port} " in line and "LISTENING" in line:
-                            parts = line.split()
-                            pid = parts[-1]
-                            if pid.isdigit() and int(pid) != os.getpid():
-                                subprocess.run(["taskkill", "/F", "/PID", pid],
-                                               stdout=subprocess.DEVNULL,
-                                               stderr=subprocess.DEVNULL)
-                                print(f"Killed stale process {pid} holding port {port}")
-                except Exception:
-                    pass
-                time.sleep(1)
+            # Kill each stale PID only once
+            try:
+                out = subprocess.check_output(
+                    ["netstat", "-ano", "-p", "TCP"], text=True, stderr=subprocess.DEVNULL
+                )
+                for line in out.splitlines():
+                    if f":{port} " in line and "LISTENING" in line:
+                        parts = line.split()
+                        pid = parts[-1]
+                        if pid.isdigit() and int(pid) != os.getpid() and pid not in killed_pids:
+                            subprocess.run(["taskkill", "/F", "/PID", pid],
+                                           stdout=subprocess.DEVNULL,
+                                           stderr=subprocess.DEVNULL)
+                            print(f"Killed stale process {pid} on port {port}")
+                            killed_pids.add(pid)
+            except Exception:
+                pass
+            time.sleep(1)
         return False
 
     if os.environ.get("UAT_AUTORESTART", "0") == "1":
-        for attempt in range(10):
-            _ensure_port_free("127.0.0.1", 8071)
-            try:
-                run("bot.server.handler:server", host="127.0.0.1", port=8071, log_level="error")
-                break
-            except OSError as e:
-                if "10048" in str(e) and attempt < 9:
-                    time.sleep(1)
-                else:
-                    raise
+        _ensure_port_free("127.0.0.1", 8071)
+        try:
+            run("bot.server.handler:server", host="127.0.0.1", port=8071, log_level="error")
+        except OSError as e:
+            print(f"Port 8071 bind failed: {e}")
+            raise
     else:
         threading.Thread(target=lambda: (time.sleep(1), __import__('webbrowser').open("http://127.0.0.1:8071")), daemon=True).start()
         try:
