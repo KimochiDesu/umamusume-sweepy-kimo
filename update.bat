@@ -11,6 +11,11 @@ adb start-server
 
 pip install -r requirements.txt
 
+cd web
+call npm install
+call npm run build
+cd ..
+
 set UAT_AUTORESTART=1
 
 where python3 >nul 2>nul
