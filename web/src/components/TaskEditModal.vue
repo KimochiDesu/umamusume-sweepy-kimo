@@ -59,6 +59,16 @@
                     </select>
                   </div>
                 </div>
+                <div class="col">
+                  <div class="form-group">
+                    <label for="selectCultivateDifficulty">Cultivation Difficulty</label>
+                    <select v-model.number="cultivateDifficulty" class="form-control" id="selectCultivateDifficulty">
+                      <option :value="0">Normal Mode</option>
+                      <option :value="1">Golshi Mode</option>
+                      <option :value="2">Hard Mode</option>
+                    </select>
+                  </div>
+                </div>
                 </div>
                 <div class="row">
                 <div class="col-3">
@@ -2213,6 +2223,7 @@ export default {
       cron: "* * * * *",
 
       selectedScenario: 3,
+      cultivateDifficulty: 0,
       selectedUmamusumeTaskType: undefined,
       selectedSupportCard: undefined,
       extraRace: [],
@@ -3502,6 +3513,7 @@ export default {
           "summer_score_threshold": this.summerScoreThreshold,
           "wit_race_search_threshold": this.witRaceSearchThreshold,
           "use_last_parents": this.useLastParents,
+          "cultivate_difficulty": this.cultivateDifficulty,
           "learn_skill_only_user_provided": this.learnSkillOnlyUserProvided,
           "extra_weight": [this.extraWeight1, this.extraWeight2, this.extraWeight3, this.extraWeightSummer],
           "base_score": [...this.baseScore],
@@ -4065,6 +4077,7 @@ export default {
       this.summerScoreThreshold = data.summer_score_threshold !== undefined ? data.summer_score_threshold : 0.17;
       this.witRaceSearchThreshold = data.wit_race_search_threshold !== undefined ? data.wit_race_search_threshold : 0.08;
       this.useLastParents = data.use_last_parents === true;
+      this.cultivateDifficulty = data.cultivate_difficulty || 0;
       this.overrideInsufficientFansForcedRaces = data.override_insufficient_fans_forced_races === true;
       this.learnSkillThreshold = data.learn_skill_threshold || this.learnSkillThreshold;
       this.recoverTP = data.allow_recover_tp || 0;

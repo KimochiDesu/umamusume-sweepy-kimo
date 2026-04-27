@@ -11,6 +11,10 @@ TO_CULTIVATE_PREPARE_CONFIRM = ClickPoint(ClickPointType.CLICK_POINT_TYPE_COORDI
 CULTIVATE_FINAL_CHECK_START = ClickPoint(ClickPointType.CLICK_POINT_TYPE_COORDINATE, None, Coordinate(500, 1185), "Start Cultivation")
 TO_FOLLOW_SUPPORT_CARD_SELECT = ClickPoint(ClickPointType.CLICK_POINT_TYPE_COORDINATE, None, Coordinate(570, 680), "Borrow Support Card")
 FOLLOW_SUPPORT_CARD_SELECT_REFRESH = ClickPoint(ClickPointType.CLICK_POINT_TYPE_COORDINATE, None, Coordinate(650, 1010), "Borrow Support Card - Refresh")
+TO_CULTIVATE_DIFFICULTY_NORMAL = ClickPoint(ClickPointType.CLICK_POINT_TYPE_COORDINATE, None, Coordinate(294, 308), "Cultivation Difficulty - Normal", None)
+TO_CULTIVATE_DIFFICULTY_GOLSHI = ClickPoint(ClickPointType.CLICK_POINT_TYPE_COORDINATE, None, Coordinate(351, 505), "Cultivation Difficulty - Golshi", None)
+TO_CULTIVATE_DIFFICULTY_HARD = ClickPoint(ClickPointType.CLICK_POINT_TYPE_COORDINATE, None, Coordinate(347, 712), "Cultivation Difficulty - Hard", None)
+TO_CULTIVATE_DIFFICULTY_CONFIRM = ClickPoint(ClickPointType.CLICK_POINT_TYPE_COORDINATE, None, Coordinate(520, 1184), "Cultivation Difficulty - Confirm", None)
 
 TO_TRAINING_SELECT = ClickPoint(ClickPointType.CLICK_POINT_TYPE_COORDINATE, None, Coordinate(355, 990), "Go to Training Selection", None)
 CULTIVATE_REST = ClickPoint(ClickPointType.CLICK_POINT_TYPE_COORDINATE, None, Coordinate(120, 995), "Rest", None)

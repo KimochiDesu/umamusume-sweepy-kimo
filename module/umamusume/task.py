@@ -25,6 +25,7 @@ class TaskDetail:
     manual_purchase_at_end: bool
     override_insufficient_fans_forced_races: bool
     use_last_parents: bool
+    cultivate_difficulty: int
     # Motivation thresholds for trip logic
     motivation_threshold_year1: int
     motivation_threshold_year2: int
@@ -94,6 +95,7 @@ def load_attachment_data(attachment_data: dict) -> TaskDetail:
     td.manual_purchase_at_end = attachment_data.get('manual_purchase_at_end', False)
     td.override_insufficient_fans_forced_races = attachment_data.get('override_insufficient_fans_forced_races', False)
     td.use_last_parents = attachment_data.get('use_last_parents', False)
+    td.cultivate_difficulty = int(attachment_data.get('cultivate_difficulty', 0))
     td.cure_asap_conditions = attachment_data.get("cure_asap_conditions", "")
     td.rest_threshold = attachment_data.get('rest_threshold', 48)
 

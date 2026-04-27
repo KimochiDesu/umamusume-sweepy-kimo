@@ -104,9 +104,11 @@ def script_cultivate_training_select(ctx: UmamusumeContext):
         pass
 
     mant_skip = False
+    mant_has_charm = False
     if is_mant:
-        from module.umamusume.scenario.mant.inventory import should_skip_fast_path
+        from module.umamusume.scenario.mant.inventory import should_skip_fast_path, has_charm
         mant_skip = should_skip_fast_path(ctx)
+        mant_has_charm = has_charm(ctx)
 
     if not getattr(ctx.cultivate_detail, 'career_data_loaded', False):
         try:
@@ -160,7 +162,7 @@ def script_cultivate_training_select(ctx: UmamusumeContext):
                     ENERGY_ITEMS, handle_energy_item,
                 )
                 from module.umamusume.constants.game_constants import (
-                    is_summer_camp_period, SUMMER_CAMP_1_START, SUMMER_CAMP_2_START,
+                    SUMMER_CAMP_1_START, SUMMER_CAMP_2_START,
                 )
                 date = getattr(ctx.cultivate_detail.turn_info, 'date', 0)
                 owned = getattr(ctx.cultivate_detail, 'mant_owned_items', [])
@@ -556,7 +558,12 @@ def script_cultivate_training_select(ctx: UmamusumeContext):
                     lv2_add = w_lv2 * fsg_mult
                     lv2_total += lv2_add
                     score += lv2_add
-            
+
+            summer_friend_bonus = 0.0
+            if is_summer_camp_period(date) and lv2c >= 2:
+                summer_friend_bonus = (lv2c - 1) * w_lv2 * 0.5
+                score += summer_friend_bonus
+
             stat_results = getattr(til, 'stat_results', {})
             stat_score = 0.0
             stat_parts = []
@@ -637,7 +644,10 @@ def script_cultivate_training_select(ctx: UmamusumeContext):
                 if getattr(ctx.cultivate_detail, 'compensate_failure', True):
                     fr_val = int(getattr(til, 'failure_rate', -1))
                     if fr_val >= 0:
-                        fail_mult = max(0.0, 1.0 - (float(fr_val) / 50.0))
+                        if mant_has_charm and fr_val > 0:
+                            fail_mult = max(0.85, 1.0 - (float(fr_val) / 200.0))
+                        else:
+                            fail_mult = max(0.0, 1.0 - (float(fr_val) / 50.0))
                         if not energy_item_used:
                             score *= fail_mult
             except Exception:
@@ -709,6 +719,8 @@ def script_cultivate_training_select(ctx: UmamusumeContext):
                 formula_parts.append(f"lv1({lv1c}):+{lv1_contrib:.3f}")
             if lv2_contrib > 0:
                 formula_parts.append(f"lv2({lv2c}):+{lv2_contrib:.3f}")
+            if summer_friend_bonus > 0:
+                formula_parts.append(f"summer_friend({lv2c}):+{summer_friend_bonus:.3f}")
             if energy_change_contrib != 0:
                 formula_parts.append(f"nrg({energy_change_val:+.1f}):{energy_change_contrib:+.3f}")
             if npc_total_contrib > 0:

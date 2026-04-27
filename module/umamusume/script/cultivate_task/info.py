@@ -107,6 +107,7 @@ TITLE = [
     "Active Item Effects", #54
     "Veteran Umamusume Max", #55 - post-career rank notification
     "Veteran Umamusume", #56 - post-career rank notification variant
+    "Career Playthrough Difficulty Select",
 ]
 
 
@@ -722,4 +723,18 @@ def script_info(ctx: UmamusumeContext):
         if title_text in (TITLE[55], TITLE[56]):
             log.info("Dismissing Veteran Umamusume popup")
             ctx.ctrl.click(200, 1210, "Veteran Umamusume dismiss")
+        if title_text == TITLE[57]:  # Career Playthrough Difficulty Select
+            difficulty = ctx.task.detail.cultivate_difficulty
+            if difficulty == 0:
+                log.info("Selecting Normal Mode difficulty")
+                ctx.ctrl.click_by_point(TO_CULTIVATE_DIFFICULTY_NORMAL)
+            elif difficulty == 1:
+                log.info("Selecting Golshi Mode difficulty")
+                ctx.ctrl.click_by_point(TO_CULTIVATE_DIFFICULTY_GOLSHI)
+            elif difficulty == 2:
+                log.info("Selecting Hard Mode difficulty")
+                ctx.ctrl.click_by_point(TO_CULTIVATE_DIFFICULTY_HARD)
+            
+            log.info("Auto click confirm on difficulty select")
+            ctx.ctrl.click_by_point(TO_CULTIVATE_DIFFICULTY_CONFIRM)
         time.sleep(0.5)

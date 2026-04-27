@@ -1673,13 +1673,16 @@ def handle_glow_sticks_before_race(ctx):
     if owned_map.get('Glow Sticks', 0) <= 0:
         return False
 
-    # Only burn Glow Sticks on high-fan (G1) races — these are the ~30k /
-    # 15k+ fan-reward races where the fan multiplier is actually worth it.
+    # Always burn Glow Sticks during MANT climax races (74/76/78) — they're
+    # the highest-fan races. Otherwise restrict to G1s only.
     from module.umamusume.asset.race_data import is_g1_race
-    op = getattr(ctx.cultivate_detail.turn_info, 'turn_operation', None)
-    race_id = getattr(op, 'race_id', None) if op is not None else None
-    if not race_id or not is_g1_race(race_id):
-        return False
+    date = getattr(ctx.cultivate_detail.turn_info, 'date', 0)
+    is_climax = date in MANT_CLIMAX_RACE_TURNS or date >= 73
+    if not is_climax:
+        op = getattr(ctx.cultivate_detail.turn_info, 'turn_operation', None)
+        race_id = getattr(op, 'race_id', None) if op is not None else None
+        if not race_id or not is_g1_race(race_id):
+            return False
 
     return use_item_and_update_inventory(ctx, 'Glow Sticks')
 
@@ -1692,9 +1695,10 @@ def remaining_climax_races(date):
 
 
 def handle_cleat_before_race(ctx, race_id, is_climax_override=False):
-    """Use a cleat before a race. Always reserves one Master Cleat Hammer
-    for each upcoming climax race (days 74/76/78) — spare masters and all
-    artisans are used first for non-climax races."""
+    """Use a cleat before a race.
+    - Climax races (74/76/78): prefer Master Cleat Hammers, fall back to Artisans.
+    - Pre-climax races: dump all Artisan Cleat Hammers (any race, not just G1).
+      Spare masters may also be used on G1s."""
     from module.umamusume.asset.race_data import is_g1_race
 
     if getattr(ctx.cultivate_detail, 'mant_cleat_used', False):
@@ -1703,12 +1707,33 @@ def handle_cleat_before_race(ctx, race_id, is_climax_override=False):
     owned = getattr(ctx.cultivate_detail, 'mant_owned_items', [])
     owned_map = {n: q for n, q in owned}
     date = getattr(ctx.cultivate_detail.turn_info, 'date', 0)
-    is_climax_race = is_climax_override or date in MANT_CLIMAX_RACE_TURNS
+
+    # Climax detection: explicit override, current date in climax turns, or
+    # we've ever been at date >= 73 (then this race must be a climax race
+    # since climax has only 3 races and they're the only races left).
+    history_in_climax = False
+    try:
+        for ti in getattr(ctx.cultivate_detail, 'turn_info_history', []):
+            if getattr(ti, 'date', 0) >= 73:
+                history_in_climax = True
+                break
+    except Exception:
+        pass
+    is_climax_race = (
+        is_climax_override
+        or date in MANT_CLIMAX_RACE_TURNS
+        or date >= 73
+        or history_in_climax
+    )
 
     master_qty = owned_map.get('Master Cleat Hammer', 0)
     artisan_qty = owned_map.get('Artisan Cleat Hammer', 0)
     if master_qty + artisan_qty <= 0:
         return False
+    log.info(
+        f"cleat: date={date} climax={is_climax_race} (override={is_climax_override}, "
+        f"hist_climax={history_in_climax}) master={master_qty} artisan={artisan_qty} race_id={race_id}"
+    )
 
     def _use(name):
         result = use_item_and_update_inventory(ctx, name)
@@ -1716,7 +1741,7 @@ def handle_cleat_before_race(ctx, race_id, is_climax_override=False):
             ctx.cultivate_detail.mant_cleat_used = True
         return result
 
-    # Climax races: spend the best cleat we have.
+    # Climax races: prefer masters, fall back to artisans.
     if is_climax_race:
         if master_qty > 0:
             return _use('Master Cleat Hammer')
@@ -1724,20 +1749,14 @@ def handle_cleat_before_race(ctx, race_id, is_climax_override=False):
             return _use('Artisan Cleat Hammer')
         return False
 
-    # Non-climax races: reserve one master per upcoming climax race.
-    # `remaining_climax_races(date)` already counts climax days >= today,
-    # and today is not climax here, so all of them are upcoming.
-    remaining_climax = remaining_climax_races(date)
-    spare_master = max(0, master_qty - remaining_climax)
-
-    # Only burn cleats on G1s when it's not a climax turn.
-    if not is_g1_race(race_id):
-        return False
-
-    # Prefer artisans first so masters are saved for climax.
+    # Pre-climax races: dump artisans on any race so none are wasted.
     if artisan_qty > 0:
         return _use('Artisan Cleat Hammer')
-    if spare_master > 0:
+
+    # No artisans left — use spare masters on G1s only.
+    remaining_climax = remaining_climax_races(date)
+    spare_master = max(0, master_qty - remaining_climax)
+    if spare_master > 0 and is_g1_race(race_id):
         return _use('Master Cleat Hammer')
     return False
 
